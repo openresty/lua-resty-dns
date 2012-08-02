@@ -28,20 +28,14 @@ __DATA__
     location /t {
         content_by_lua '
             local resolver = require "resty.dns.resolver"
-            local r, err = resolver:new()
+
+            local r, err = resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
             if not r then
                 ngx.say("failed to instantiate resolver: ", err)
                 return
             end
 
-            local host = "$TEST_NGINX_RESOLVER"
-            local ok, err = r:connect(host, 53)
-            if not ok then
-                ngx.say("failed to connect: ", err)
-                return
-            end
-
-            local ans, err = r:query("www.google.com", r.TYPE_A)
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
             if not ans then
                 ngx.say("failed to query: ", err)
                 return
@@ -49,12 +43,6 @@ __DATA__
 
             local cjson = require "cjson"
             ngx.say("records: ", cjson.encode(ans))
-
-            local ok, err = r:close()
-            if not ok then
-                ngx.say("failed to close resolver: ", err)
-                return
-            end
         ';
     }
 --- request
@@ -72,20 +60,14 @@ GET /t
     location /t {
         content_by_lua '
             local resolver = require "resty.dns.resolver"
-            local r, err = resolver:new()
+
+            local r, err = resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
             if not r then
                 ngx.say("failed to instantiate resolver: ", err)
                 return
             end
 
-            local host = "$TEST_NGINX_RESOLVER"
-            local ok, err = r:connect(host, 53)
-            if not ok then
-                ngx.say("failed to connect: ", err)
-                return
-            end
-
-            local ans, err = r:query("www.google.com", r.TYPE_CNAME)
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_CNAME })
             if not ans then
                 ngx.say("failed to query: ", err)
                 return
@@ -93,12 +75,6 @@ GET /t
 
             local cjson = require "cjson"
             ngx.say("records: ", cjson.encode(ans))
-
-            local ok, err = r:close()
-            if not ok then
-                ngx.say("failed to close resolver: ", err)
-                return
-            end
         ';
     }
 --- request
@@ -116,20 +92,13 @@ GET /t
     location /t {
         content_by_lua '
             local resolver = require "resty.dns.resolver"
-            local r, err = resolver:new()
+            local r, err = resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
             if not r then
                 ngx.say("failed to instantiate resolver: ", err)
                 return
             end
 
-            local host = "$TEST_NGINX_RESOLVER"
-            local ok, err = r:connect(host, 53)
-            if not ok then
-                ngx.say("failed to connect: ", err)
-                return
-            end
-
-            local ans, err = r:query("www.google.com", r.TYPE_AAAA)
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_AAAA })
             if not ans then
                 ngx.say("failed to query: ", err)
                 return
@@ -137,12 +106,6 @@ GET /t
 
             local cjson = require "cjson"
             ngx.say("records: ", cjson.encode(ans))
-
-            local ok, err = r:close()
-            if not ok then
-                ngx.say("failed to close resolver: ", err)
-                return
-            end
         ';
     }
 --- request

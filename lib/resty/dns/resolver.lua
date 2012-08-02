@@ -43,31 +43,65 @@ local mt = { __index = class }
 
 
 function new(self, opts)
-    local sock, err = udp()
-    if not sock then
-        return nil, err
+    if not opts then
+        return nil, "no options table specified"
     end
-    return setmetatable({ sock = sock }, mt)
+
+    local servers = opts.nameservers
+    if not servers or #servers == 0 then
+        return nil, "no nameservers specified"
+    end
+
+    local socks = {}
+    for i = 1, #servers do
+        local server = servers[i]
+        local sock, err = udp()
+        if not sock then
+            return nil, "failed to create udp socket: " .. err
+        end
+
+        local host, port
+        if type(server) == 'table' then
+            host = server[1]
+            port = server[2] or 53
+
+        else
+            host = server
+            port = 53
+        end
+
+        local ok, err = sock:setpeername(host, port)
+        if not ok then
+        end
+        insert(socks, sock)
+    end
+
+    return setmetatable({ cur = 1, socks = socks }, mt)
+end
+
+
+local function pick_sock(self, socks)
+    local cur = self.cur
+
+    if cur == #socks then
+        self.cur = 1
+    else
+        self.cur = cur + 1
+    end
+
+    return socks[cur]
 end
 
 
 function set_timeout(self, timeout)
-    local sock = self.sock
-    if not sock then
+    local socks = self.socks
+    if not socks then
         return nil, "not initialized"
     end
 
-    return sock:settimeout(timeout)
-end
-
-
-function connect(self, ...)
-    local sock = self.sock
-    if not sock then
-        return nil, "not initialized"
+    for sock in socks do
+        sock:settimeout(timeout)
     end
-
-    return sock:setpeername(...)
 end
 
 
@@ -129,10 +163,18 @@ local function decode_name(buf, pos)
 end
 
 
-function query(self, qname, qtype)
-    local sock = self.sock
-    if not sock then
+function query(self, qname, opts)
+    local socks = self.socks
+    if not socks then
         return nil, nil, "not initialized"
+    end
+
+    local sock = pick_sock(self, socks)
+
+    local qtype
+
+    if opts then
+        qtype = opts.qtype
     end
 
     if not qtype then
@@ -365,16 +407,6 @@ function query(self, qname, qtype)
     end
 
     return answers
-end
-
-
-function close(self)
-    local sock = self.sock
-    if not sock then
-        return nil, "not initialized"
-    end
-
-    return sock:close()
 end
 
 

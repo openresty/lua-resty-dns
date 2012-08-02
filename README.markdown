@@ -30,23 +30,20 @@ Synopsis
     server {
         location /test {
             content_by_lua '
-                local resolv = require "resty.dns.resolver"
-                local resolv = resolv:new()
+                local resolver = require "resty.dns.resolver"
+                local r = resolver:new{
+                    nameservers = {
+                        {"8.8.8.8", 53},
+                        "8.8.4.4",
+                    }
+                }
 
-                resolv:set_timeout(1000) -- 1 sec
+                r:set_timeout(1000) -- 1 sec
 
-                -- or connect to a unix domain socket file listened
-                -- by a dns.resolver server:
-                --     local ok, err = resolv:connect("unix:/path/to/dns.sock")
+                -- other query types are r.TYPE_AAAA and r.TYPE_CNAME
+                local answers, err = r:query("www.google.com",
+                        { qtype = r.TYPE_A })
 
-                local ok, err = resolv:connect("8.8.8.8", 53)
-                if not ok then
-                    ngx.say("failed to connect: ", err)
-                    return
-                end
-
-                -- other query types are "TYPE_AAAA" and "TYPE_CNAME"
-                local answers, err = resolv:query("www.google.com", resolv.TYPE_A)
                 if not answers then
                     ngx.say("failed to query: ", err)
                     return
@@ -60,12 +57,6 @@ Synopsis
                     local ttl = ans.ttl
                     -- process these fields
                 end
-
-                local ok, err = resolv:close()
-                if not ok then
-                    ngx.say("failed to close: ", err)
-                    return
-                end
             ';
         }
     }
@@ -75,25 +66,14 @@ Methods
 
 new
 ---
-`syntax: resolv, err = dns.resolver:new()`
+`syntax: r, err = dns.resolver:new(opts)`
 
-Creates a dns.resolver object. Returns `nil` on error.
+Creates a dns.resolver object. Returns `nil` and an message string on error.
 
-connect
--------
-`syntax: ok, err = resolv:connect(host, port)`
+It accepts a `opts` table argument. The following options are supported:
 
-`syntax: ok, err = resolv:connect("unix:/path/to/unix.sock")`
-
-Attempts to "connect" to the remote host and port that the DNS nameserver is listening on or a local unix domain socket file listened by the DNS nameserver, using a UDP or unix datagram socket.
-
-close
------
-`syntax: ok, err = resolv:close()`
-
-Closes the current UDP/datagram socket and returns the status.
-
-In case of success, returns `1`. In case of errors, returns `nil` with a string describing the error.
+* `nameservers`
+: a list of nameservers to be used. Each nameserver entry can be either a single hostname string or a table holding both the hostname string and the port number.
 
 Limitations
 ===========
