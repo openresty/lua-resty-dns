@@ -391,13 +391,10 @@ function query(self, qname, opts)
                 end
             end
 
-            local addr = concat(flds, ":")
+            -- we do not compress the IPv6 addresses by default
+            --  due to performance considerations
 
-            -- addr = '1080:0:0:0:8:800:200C:417A'
-            -- addr = 'FF01:0:0:0:0:0:0:101'
-            -- addr = '0:0:0:0:0:0:0:1'
-            -- addr = '0:0:0:0:0:0:0:0'
-            ans.address = re_sub(addr, "^(0:)+|:(0:)+|(:0)+$", "::", "jo")
+            ans.address = concat(flds, ":")
 
             pos = pos + 16
 
@@ -407,6 +404,16 @@ function query(self, qname, opts)
     end
 
     return answers
+end
+
+
+function compress_ipv6_addr(addr)
+    local addr = re_sub(addr, "^(0:)+|(:0)+$|:(0:)+", "::", "jo")
+    if addr == "::0" then
+        addr = "::"
+    end
+
+    return addr
 end
 
 
