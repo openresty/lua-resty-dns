@@ -163,7 +163,7 @@ function query(self, qname, qtype)
         return nil, "failed to send DNS request: " .. err
     end
 
-    local buf, err = sock:receive()
+    local buf, err = sock:receive(512)
     if not buf then
         return nil, "failed to receive DNS response: " .. err
     end
