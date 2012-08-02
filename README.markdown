@@ -46,7 +46,12 @@ Synopsis
                 end
 
                 -- other type argument can be "TYPE_AAAA" and "TYPE_CNAME"
-                local answers = resolv:query("www.google.com", resolv.TYPE_A)
+                local answers, err = resolv:query("www.google.com", resolv.TYPE_A)
+                if not answers then
+                    ngx.say("failed to query: ", err)
+                    return
+                end
+
                 for ans in answers do
                     local typ = ans.typ
                     local addr = ans.address
