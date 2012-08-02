@@ -41,7 +41,7 @@ __DATA__
                 return
             end
 
-            local ans, err = r:query("www.google.com", r.QTYPE_A)
+            local ans, err = r:query("www.google.com", r.TYPE_A)
             if not ans then
                 ngx.say("failed to query: ", err)
                 return
@@ -60,7 +60,7 @@ __DATA__
 --- request
 GET /t
 --- response_body_like chop
-^records: \[.*?"address":"(?:\d{1,3}\.){3}\d+".*?\]$
+^arecords: \[.*?"address":"(?:\d{1,3}\.){3}\d+".*?\]$
 --- no_error_log
 [error]
 

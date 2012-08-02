@@ -23,6 +23,7 @@ local rshift = bit.rshift
 local lshift = bit.lshift
 local insert = table.insert
 local concat = table.concat
+local re_sub = ngx.re.sub
 
 
 TYPE_A = 1
@@ -279,6 +280,8 @@ function query(self, qname, qtype)
         class_lo = byte(buf, pos + 3)
         local class = lshift(class_hi, 8) + class_lo
 
+        ans.class = class
+
         -- ngx.say("class: ", class)
 
         local ttl_bytes = { byte(buf, pos + 4, pos + 7) }
@@ -289,6 +292,8 @@ function query(self, qname, qtype)
                     + lshift(ttl_bytes[3], 8) + ttl_bytes[4]
 
         -- ngx.say("ttl: ", ttl)
+
+        ans.ttl = ttl
 
         local len_hi = byte(buf, pos + 8)
         local len_lo = byte(buf, pos + 9)
@@ -304,11 +309,11 @@ function query(self, qname, qtype)
                 return nil, "bad A record value length: " .. len
             end
 
-            local ipv4_bytes = { byte(buf, pos, pos + 3) }
-            local ipv4 = concat(ipv4_bytes, ".")
-            -- ngx.say("ipv4 address: ", ipv4)
+            local addr_bytes = { byte(buf, pos, pos + 3) }
+            local addr = concat(addr_bytes, ".")
+            -- ngx.say("ipv4 address: ", addr)
 
-            ans.address = ipv4
+            ans.address = addr
 
             pos = pos + 4
 
@@ -323,6 +328,36 @@ function query(self, qname, qtype)
             -- ngx.say("cname: ", cname)
 
             ans.cname = cname
+
+        elseif typ == TYPE_AAAA then
+
+            if len ~= 16 then
+                return nil, "bad AAAA record value length: " .. len
+            end
+
+            local addr_bytes = { byte(buf, pos, pos + 15) }
+            local flds = {}
+            local comp_begin, comp_end
+            for i = 1, 16, 2 do
+                local a = addr_bytes[i]
+                local b = addr_bytes[i + 1]
+                if a == 0 then
+                    insert(flds, format("%x", b))
+
+                else
+                    insert(flds, format("%x%02x", a, b))
+                end
+            end
+
+            local addr = concat(flds, ":")
+
+            -- addr = '1080:0:0:0:8:800:200C:417A'
+            -- addr = 'FF01:0:0:0:0:0:0:101'
+            -- addr = '0:0:0:0:0:0:0:1'
+            -- addr = '0:0:0:0:0:0:0:0'
+            ans.address = re_sub(addr, "^(0:)+|:(0:)+|(:0)+$", "::", "jo")
+
+            pos = pos + 16
 
         else
             pos = pos + len

@@ -1,7 +1,7 @@
 Name
 ====
 
-lua-resty-dns - Lua DNS client driver for the ngx_lua based on the cosocket API
+lua-resty-dns - Lua DNS resolver for the ngx_lua based on the cosocket API
 
 Status
 ======
@@ -43,6 +43,17 @@ Synopsis
                 if not ok then
                     ngx.say("failed to connect: ", err)
                     return
+                end
+
+                -- other type argument can be "TYPE_AAAA" and "TYPE_CNAME"
+                local answers = resolv:query("www.google.com", resolv.TYPE_A)
+                for ans in answers do
+                    local typ = ans.typ
+                    local addr = ans.address
+                    local class = ans.class
+                    local cname = ans.cname
+                    local ttl = ans.ttl
+                    -- process these fields
                 end
 
                 local ok, err = resolv:close()
