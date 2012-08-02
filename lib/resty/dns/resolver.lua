@@ -362,7 +362,6 @@ function query(self, qname, qtype)
         else
             pos = pos + len
         end
-
     end
 
     return answers

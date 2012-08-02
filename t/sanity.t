@@ -22,7 +22,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: basic
+=== TEST 1: A records
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -60,7 +60,95 @@ __DATA__
 --- request
 GET /t
 --- response_body_like chop
-^arecords: \[.*?"address":"(?:\d{1,3}\.){3}\d+".*?\]$
+^records: \[.*?"address":"(?:\d{1,3}\.){3}\d+".*?\]$
+--- no_error_log
+[error]
+
+
+
+=== TEST 2: CNAME records
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+            local r, err = resolver:new()
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            local host = "$TEST_NGINX_RESOLVER"
+            local ok, err = r:connect(host, 53)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local ans, err = r:query("www.google.com", r.TYPE_CNAME)
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+
+            local ok, err = r:close()
+            if not ok then
+                ngx.say("failed to close resolver: ", err)
+                return
+            end
+        ';
+    }
+--- request
+GET /t
+--- response_body_like chop
+^records: \[.*?"cname":"[-_a-z0-9.]+".*?\]$
+--- no_error_log
+[error]
+
+
+
+=== TEST 3: AAAA records
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+            local r, err = resolver:new()
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            local host = "$TEST_NGINX_RESOLVER"
+            local ok, err = r:connect(host, 53)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local ans, err = r:query("www.google.com", r.TYPE_AAAA)
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+
+            local ok, err = r:close()
+            if not ok then
+                ngx.say("failed to close resolver: ", err)
+                return
+            end
+        ';
+    }
+--- request
+GET /t
+--- response_body_like chop
+^records: \[.*?"address":"\d*(?::\d*)+\d*".*?\]$
 --- no_error_log
 [error]
 
