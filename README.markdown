@@ -45,7 +45,7 @@ Synopsis
                     return
                 end
 
-                -- other type argument can be "TYPE_AAAA" and "TYPE_CNAME"
+                -- other query types are "TYPE_AAAA" and "TYPE_CNAME"
                 local answers, err = resolv:query("www.google.com", resolv.TYPE_A)
                 if not answers then
                     ngx.say("failed to query: ", err)
