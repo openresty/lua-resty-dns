@@ -86,6 +86,13 @@ sub Test::Base::Filter::dns {
             $class //= CLASS_INTERNET;
         }
 
+        my $ipv6 = $ans->{ipv6};
+        if (defined $ipv6) {
+            ($rddata, $rdlength) = encode_ipv6($ipv6);
+            $type //= TYPE_AAAA;
+            $class //= CLASS_INTERNET;
+        }
+
         $rdlength //= $ans->{rdlength} // 0;
         $rddata //= $ans->{rddata} // "";
 
@@ -101,6 +108,57 @@ sub encode_ipv4 ($) {
     my $txt = shift;
     my @bytes = split /\./, $txt;
     return pack("CCCC", @bytes), 4;
+}
+
+sub encode_ipv6 ($) {
+    my $txt = shift;
+    my @groups = split /:/, $txt;
+    my $nils = 0;
+    my $nonnils = 0;
+    for my $g (@groups) {
+        if ($g eq '') {
+            $nils++;
+        } else {
+            $nonnils++;
+            $g = hex($g);
+        }
+    }
+
+    my $total = $nils + $nonnils;
+    if ($total > 8 ) {
+        die "Invalid IPv6 address: too many groups: $total: $txt";
+    }
+
+    if ($nils) {
+        my $found = 0;
+        my @new_groups;
+        for my $g (@groups) {
+            if ($g eq '') {
+                if ($found) {
+                    next;
+                }
+
+                for (1 .. 8 - $nonnils) {
+                    push @new_groups, 0;
+                }
+
+                $found = 1;
+
+            } else {
+                push @new_groups, $g;
+            }
+        }
+
+        @groups = @new_groups;
+    }
+
+    if (@groups != 8) {
+        die "Invalid IPv6 address: $txt: @groups\n";
+    }
+
+    #warn "IPv6 groups: @groups";
+
+    return pack("nnnnnnnn", @groups), 16;
 }
 
 sub encode_name ($) {

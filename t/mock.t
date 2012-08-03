@@ -62,7 +62,7 @@ __DATA__
 GET /t
 --- response_body
 records: [{"address":"127.0.0.1","class":1,"ttl":123456,"name":"www.google.com","typ":1}]
---- no_error_log eval
+--- no_error_log
 [error]
 
 
@@ -105,7 +105,7 @@ records: [{"address":"127.0.0.1","class":1,"ttl":123456,"name":"www.google.com",
 GET /t
 --- response_body
 records: {}
---- no_error_log eval
+--- no_error_log
 [error]
 
 
@@ -179,6 +179,53 @@ failed to query: truncated
 GET /t
 --- response_body
 failed to query: truncated
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: two answers reply that contains IPv6 addresses
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 1,
+    qname => 'www.google.com',
+    answer => [
+        { name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 },
+        { name => "l.www.google.com", ipv6 => "::1", ttl => 0 },
+    ],
+}
+--- request
+GET /t
+--- response_body
+records: [{"address":"127.0.0.1","class":1,"ttl":123456,"name":"www.google.com","typ":1},{"address":"0:0:0:0:0:0:0:1","class":1,"ttl":0,"name":"l.www.google.com","typ":28}]
 --- no_error_log
 [error]
 
