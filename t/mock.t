@@ -229,3 +229,49 @@ records: [{"address":"127.0.0.1","class":1,"ttl":123456,"name":"www.google.com",
 --- no_error_log
 [error]
 
+
+
+=== TEST 6: CNAME answer
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 1,
+    qname => 'www.google.com',
+    answer => [
+        { name => "www.google.com", cname => "blah.google.com", ttl => 125 },
+    ],
+}
+--- request
+GET /t
+--- response_body
+records: [{"cname":"blah.google.com","class":1,"ttl":125,"name":"www.google.com","typ":5}]
+--- no_error_log
+[error]
+

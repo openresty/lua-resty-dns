@@ -13,6 +13,7 @@ use constant {
 
 sub encode_name ($);
 sub encode_ipv4 ($);
+sub encode_ipv6 ($);
 
 sub Test::Base::Filter::dns {
     my ($filter, $code) = @_;
@@ -90,6 +91,14 @@ sub Test::Base::Filter::dns {
         if (defined $ipv6) {
             ($rddata, $rdlength) = encode_ipv6($ipv6);
             $type //= TYPE_AAAA;
+            $class //= CLASS_INTERNET;
+        }
+
+        my $cname = $ans->{cname};
+        if (defined $cname) {
+            $rddata = encode_name($cname);
+            $rdlength = length $rddata;
+            $type //= TYPE_CNAME;
             $class //= CLASS_INTERNET;
         }
 
