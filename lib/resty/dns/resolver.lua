@@ -181,7 +181,11 @@ function query(self, qname, opts)
         qtype = 1  -- A record
     end
 
-    local id = rand(0, 65535)   -- two bytes
+    local id = self._id   -- for regression testing
+    if not id then
+        id = rand(0, 65535)   -- two bytes
+    end
+
     local ident_hi = char(rshift(id, 8))
     local ident_lo = char(band(id, 0xff))
 
