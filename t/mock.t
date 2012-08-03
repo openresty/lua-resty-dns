@@ -411,3 +411,53 @@ failed to query: bad AAAA record value length: 21
 --- no_error_log
 [error]
 
+
+
+=== TEST 10: timeout
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r:set_timeout(10)
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply_delay: 50ms
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 1,
+    qname => 'www.google.com',
+    answer => [
+        { name => "l.www.google.com", ipv6 => "::1", ttl => 0, rdlength => 21 },
+    ],
+}
+--- request
+GET /t
+--- response_body
+failed to query: failed to receive DNS response: timeout
+--- error_log
+lua udp socket read timed out
+--- timeout: 3
+

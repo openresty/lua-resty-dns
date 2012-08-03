@@ -99,7 +99,8 @@ function set_timeout(self, timeout)
         return nil, "not initialized"
     end
 
-    for sock in socks do
+    for i = 1, #socks do
+        local sock = socks[i]
         sock:settimeout(timeout)
     end
 end
@@ -278,7 +279,7 @@ function query(self, qname, opts)
 
     -- print("question: ", substr(buf, 13, pos))
 
-    if pos + 3 + nan * (2 + 10) > n then
+    if pos + 3 + nan * 12 > n then
         -- print(format("%d > %d", pos + 3 + nan * 12, n))
         return nil, 'truncated';
     end
