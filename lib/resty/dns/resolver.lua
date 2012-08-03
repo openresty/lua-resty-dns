@@ -121,9 +121,12 @@ local function decode_name(buf, pos)
             return nil, 'truncated';
         end
 
-        -- ngx.say("fst at ", p, ": ", fst)
+        -- print("fst at ", p, ": ", fst)
 
         if fst == 0 then
+            if nptrs == 0 then
+                pos = pos + 1
+            end
             break
         end
 
@@ -142,14 +145,14 @@ local function decode_name(buf, pos)
 
             p = lshift(band(fst, 0x3f), 8) + snd + 1
 
-            -- ngx.say("resolving ptr ", p, ": ", byte(buf, p))
+            -- print("resolving ptr ", p, ": ", byte(buf, p))
 
         else
             -- being a label
             local label = substr(buf, p + 1, p + fst)
             insert(labels, label)
 
-            -- ngx.say("resolved label ", label)
+            -- print("resolved label ", label)
 
             p = p + fst + 1
 
@@ -225,7 +228,7 @@ function query(self, qname, opts)
     local ident_lo = byte(buf, 2)
     local ans_id = lshift(ident_hi, 8) + ident_lo
 
-    -- ngx.say("id: ", id, ", ans id: ", ans_id)
+    -- print("id: ", id, ", ans id: ", ans_id)
 
     if ans_id ~= id then
         return nil, format("identifier mismatch: %d ~= %d", ans_id, id)
@@ -241,7 +244,7 @@ function query(self, qname, opts)
 
     local code = band(flags, 0x7f)
 
-    -- ngx.say(format("code: %d", code))
+    -- print(format("code: %d", code))
 
     if code ~= 0 then
         return nil, format("server returned %d: %s", code,
@@ -252,7 +255,7 @@ function query(self, qname, opts)
     local nqs_lo = byte(buf, 6)
     local nqs = lshift(nqs_hi, 8) + nqs_lo
 
-    -- ngx.say("nqs: ", nqs)
+    -- print("nqs: ", nqs)
 
     if nqs ~= 1 then
         return nil, format("bad number of questions in DNS response: %d", nqs)
@@ -262,23 +265,23 @@ function query(self, qname, opts)
     local nan_lo = byte(buf, 8)
     local nan = lshift(nan_hi, 8) + nan_lo
 
-    -- ngx.say("nan: ", nan)
+    -- print("nan: ", nan)
 
     -- skip the question part
 
-    local pos = find(buf, "\0", 13)
-    if not pos then
-        return nil, 'truncated';
+    local ans_qname, pos = decode_name(buf, 13)
+    if not ans_qname then
+        return nil, pos
     end
 
-    -- ngx.say("byte at 13: ", byte(buf, 13))
-    -- ngx.say("question: ", substr(buf, 13, pos))
+    -- print("qname in reply: ", ans_qname)
 
-    if pos + 4 + nan * (2 + 10) > n then
+    -- print("question: ", substr(buf, 13, pos))
+
+    if pos + 3 + nan * (2 + 10) > n then
+        -- print(format("%d > %d", pos + 3 + nan * 12, n))
         return nil, 'truncated';
     end
-
-    pos = pos + 1  -- skip '\0'
 
     -- question section layout: qname qtype(2) qclass(2)
 
@@ -286,9 +289,13 @@ function query(self, qname, opts)
     local type_lo = byte(buf, pos + 1)
     local ans_type = lshift(type_hi, 8) + type_lo
 
+    -- print("ans qtype: ", ans_type)
+
     local class_hi = byte(buf, pos + 2)
     local class_lo = byte(buf, pos + 3)
     local qclass = lshift(class_hi, 8) + class_lo
+
+    -- print("ans qclass: ", qclass)
 
     if qclass ~= 1 then
         return nil, format("unknown query class %d in DNS response", qclass)
@@ -299,7 +306,7 @@ function query(self, qname, opts)
     local answers = {}
 
     for i = 1, nan do
-        -- ngx.say(format("ans %d: qtype:%d qclass:%d", i, qtype, qclass))
+        -- print(format("ans %d: qtype:%d qclass:%d", i, qtype, qclass))
 
         local ans = {}
         insert(answers, ans)
@@ -312,7 +319,7 @@ function query(self, qname, opts)
 
         ans.name = name
 
-        -- ngx.say("name: ", name)
+        -- print("name: ", name)
 
         type_hi = byte(buf, pos)
         type_lo = byte(buf, pos + 1)
@@ -320,7 +327,7 @@ function query(self, qname, opts)
 
         ans.typ = typ
 
-        -- ngx.say("type: ", typ)
+        -- print("type: ", typ)
 
         class_hi = byte(buf, pos + 2)
         class_lo = byte(buf, pos + 3)
@@ -328,16 +335,16 @@ function query(self, qname, opts)
 
         ans.class = class
 
-        -- ngx.say("class: ", class)
+        -- print("class: ", class)
 
         local ttl_bytes = { byte(buf, pos + 4, pos + 7) }
 
-        -- ngx.say("ttl bytes: ", concat(ttl_bytes, " "))
+        -- print("ttl bytes: ", concat(ttl_bytes, " "))
 
         local ttl = lshift(ttl_bytes[1], 24) + lshift(ttl_bytes[2], 16)
                     + lshift(ttl_bytes[3], 8) + ttl_bytes[4]
 
-        -- ngx.say("ttl: ", ttl)
+        -- print("ttl: ", ttl)
 
         ans.ttl = ttl
 
@@ -345,7 +352,7 @@ function query(self, qname, opts)
         local len_lo = byte(buf, pos + 9)
         local len = lshift(len_hi, 8) + len_lo
 
-        -- ngx.say("len: ", len)
+        -- print("len: ", len)
 
         pos = pos + 10
 
@@ -357,7 +364,7 @@ function query(self, qname, opts)
 
             local addr_bytes = { byte(buf, pos, pos + 3) }
             local addr = concat(addr_bytes, ".")
-            -- ngx.say("ipv4 address: ", addr)
+            -- print("ipv4 address: ", addr)
 
             ans.address = addr
 
@@ -371,7 +378,7 @@ function query(self, qname, opts)
                 return nil, pos
             end
 
-            -- ngx.say("cname: ", cname)
+            -- print("cname: ", cname)
 
             ans.cname = cname
 
