@@ -73,37 +73,42 @@ sub Test::Base::Filter::dns {
     $s .= pack("nn", $qs_type, $qs_class);
 
     for my $ans (@$answers) {
-        my $name = encode_name($ans->{name});
+        my $name = encode_name($ans->{name} // "");
         my $type = $ans->{type};
         my $class = $ans->{class};
-        my $ttl = $ans->{ttl} // 0;
-
-        my ($rdlength, $rddata);
+        my $ttl = $ans->{ttl};
+        my $rdlength = $ans->{rdlength};
+        my $rddata = $ans->{rddata};
 
         my $ipv4 = $ans->{ipv4};
         if (defined $ipv4) {
-            ($rddata, $rdlength) = encode_ipv4($ipv4);
+            my ($data, $len) = encode_ipv4($ipv4);
+            $rddata //= $data;
+            $rdlength //= $len;
             $type //= TYPE_A;
             $class //= CLASS_INTERNET;
         }
 
         my $ipv6 = $ans->{ipv6};
         if (defined $ipv6) {
-            ($rddata, $rdlength) = encode_ipv6($ipv6);
+            my ($data, $len) = encode_ipv6($ipv6);
+            $rddata //= $data;
+            $rdlength //= $len;
             $type //= TYPE_AAAA;
             $class //= CLASS_INTERNET;
         }
 
         my $cname = $ans->{cname};
         if (defined $cname) {
-            $rddata = encode_name($cname);
-            $rdlength = length $rddata;
+            $rddata //= encode_name($cname);
+            $rdlength //= length $rddata;
             $type //= TYPE_CNAME;
             $class //= CLASS_INTERNET;
         }
 
-        $rdlength //= $ans->{rdlength} // 0;
-        $rddata //= $ans->{rddata} // "";
+        $type //= 0;
+        $class //= 0;
+        $ttl //= 0;
 
         #warn "rdlength: $rdlength, rddata: ", encode_json([$rddata]), "\n";
 

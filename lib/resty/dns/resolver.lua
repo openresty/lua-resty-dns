@@ -372,11 +372,18 @@ function query(self, qname, opts)
 
         elseif typ == TYPE_CNAME then
 
-            local cname
-            cname, pos = decode_name(buf, pos)
+            local cname, p
+            cname, p = decode_name(buf, pos)
             if not cname then
                 return nil, pos
             end
+
+            if p - pos ~= len then
+                return nil, format("bad cname record length: %d ~= %d",
+                                   p - pos, len)
+            end
+
+            pos = p
 
             -- print("cname: ", cname)
 

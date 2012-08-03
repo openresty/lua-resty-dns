@@ -23,7 +23,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: single answer reply
+=== TEST 1: single answer reply, good A answer
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -184,7 +184,7 @@ failed to query: truncated
 
 
 
-=== TEST 5: two answers reply that contains IPv6 addresses
+=== TEST 5: two answers reply that contains AAAA records
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -231,7 +231,7 @@ records: [{"address":"127.0.0.1","class":1,"ttl":123456,"name":"www.google.com",
 
 
 
-=== TEST 6: CNAME answer
+=== TEST 6: good CNAME answer
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -272,6 +272,142 @@ records: [{"address":"127.0.0.1","class":1,"ttl":123456,"name":"www.google.com",
 GET /t
 --- response_body
 records: [{"cname":"blah.google.com","class":1,"ttl":125,"name":"www.google.com","typ":5}]
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: CNAME answer with bad rd length
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 1,
+    qname => 'www.google.com',
+    answer => [
+        { name => "www.google.com", cname => "blah.google.com", ttl => 125, rdlength => 3 },
+    ],
+}
+--- request
+GET /t
+--- response_body
+failed to query: bad cname record length: 17 ~= 3
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: single answer reply, bad A answer, wrong record length
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 1,
+    qname => 'www.google.com',
+    answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456, rdlength => 1 }],
+}
+--- request
+GET /t
+--- response_body
+failed to query: bad A record value length: 1
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: bad AAAA record, wrong len
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 1,
+    qname => 'www.google.com',
+    answer => [
+        { name => "l.www.google.com", ipv6 => "::1", ttl => 0, rdlength => 21 },
+    ],
+}
+--- request
+GET /t
+--- response_body
+failed to query: bad AAAA record value length: 21
 --- no_error_log
 [error]
 
