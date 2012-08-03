@@ -47,7 +47,7 @@ __DATA__
             ngx.say("records: ", cjson.encode(ans))
         ';
     }
---- udp_server: 1953
+--- udp_listen: 1953
 --- udp_reply: a
 --- request
 GET /t
