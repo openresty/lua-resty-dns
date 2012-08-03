@@ -179,6 +179,6 @@ failed to query: truncated
 GET /t
 --- response_body
 failed to query: truncated
---- no_error_log eval
+--- no_error_log
 [error]
 
