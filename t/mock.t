@@ -421,14 +421,15 @@ failed to query: bad AAAA record value length: 21
             local resolver = require "resty.dns.resolver"
 
             local r, err = resolver:new{
-                nameservers = { {"127.0.0.1", 1953} }
+                nameservers = { {"127.0.0.1", 1953} },
+                -- retrans = 4,
             }
             if not r then
                 ngx.say("failed to instantiate resolver: ", err)
                 return
             end
 
-            r:set_timeout(10)
+            r:set_timeout(10)   -- in ms
 
             r._id = 125
 
@@ -450,13 +451,114 @@ failed to query: bad AAAA record value length: 21
     opcode => 1,
     qname => 'www.google.com',
     answer => [
-        { name => "l.www.google.com", ipv6 => "::1", ttl => 0, rdlength => 21 },
+        { name => "l.www.google.com", ipv6 => "::1", ttl => 0 },
     ],
 }
 --- request
 GET /t
 --- response_body
 failed to query: failed to receive DNS response: timeout
+--- error_log
+lua udp socket read timed out
+--- timeout: 3
+
+
+
+=== TEST 11: not timeout finally (re-transmission works)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} },
+                -- retrans = 4,
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r:set_timeout(20)   -- in ms
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply_delay: 50ms
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 1,
+    qname => 'www.google.com',
+    answer => [
+        { name => "l.www.google.com", ipv6 => "FF01::101", ttl => 0 },
+    ],
+}
+--- request
+GET /t
+--- response_body
+records: [{"address":"ff01:0:0:0:0:0:0:101","class":1,"ttl":0,"name":"l.www.google.com","typ":28}]
+--- error_log
+lua udp socket read timed out
+--- timeout: 3
+
+
+=== TEST 11: timeout finally (re-transmission works but not enough retrans times)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} },
+                retrans = 3,
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r:set_timeout(20)   -- in ms
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply_delay: 50ms
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 1,
+    qname => 'www.google.com',
+    answer => [
+        { name => "l.www.google.com", ipv6 => "FF01::101", ttl => 0 },
+    ],
+}
+--- request
+GET /t
+--- response_body
+records: [{"address":"ff01:0:0:0:0:0:0:101","class":1,"ttl":0,"name":"l.www.google.com","typ":28}]
 --- error_log
 lua udp socket read timed out
 --- timeout: 3

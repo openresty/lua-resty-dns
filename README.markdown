@@ -35,10 +35,12 @@ Synopsis
                     nameservers = {
                         {"8.8.8.8", 53},
                         "8.8.4.4",
-                    }
+                    },
+                    retrans = 4,    -- default to 4 re-transmissions on timeout
+                    timeout = 1000, -- default to 1000ms
                 }
 
-                r:set_timeout(1000) -- 1 sec
+                r:set_timeout(100) -- reset to 100ms
 
                 -- other query types are r.TYPE_AAAA and r.TYPE_CNAME
                 local answers, err = r:query("www.google.com",

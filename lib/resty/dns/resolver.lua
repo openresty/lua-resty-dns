@@ -8,6 +8,7 @@ _VERSION = '0.01'
 local bit = require "bit"
 
 
+-- local socket = require "socket"
 local class = resty.dns.resolver
 local udp = ngx.socket.udp
 local rand = math.random
@@ -42,7 +43,7 @@ local resolver_errstrs = {
 local mt = { __index = class }
 
 
-function new(self, opts)
+function new(class, opts)
     if not opts then
         return nil, "no options table specified"
     end
@@ -51,6 +52,8 @@ function new(self, opts)
     if not servers or #servers == 0 then
         return nil, "no nameservers specified"
     end
+
+    local timeout = opts.timeout or 1000  -- default 1 sec
 
     local socks = {}
     for i = 1, #servers do
@@ -72,11 +75,16 @@ function new(self, opts)
 
         local ok, err = sock:setpeername(host, port)
         if not ok then
+            return nil, "failed to set peer name: " .. err
         end
+
+        sock:settimeout(timeout)
+
         insert(socks, sock)
     end
 
-    return setmetatable({ cur = 1, socks = socks }, mt)
+    return setmetatable(
+                { cur = 1, socks = socks, retrans = opts.retrans or 4 }, mt)
 end
 
 
@@ -167,14 +175,7 @@ local function decode_name(buf, pos)
 end
 
 
-function query(self, qname, opts)
-    local socks = self.socks
-    if not socks then
-        return nil, nil, "not initialized"
-    end
-
-    local sock = pick_sock(self, socks)
-
+local function build_request(qname, id, opts)
     local qtype
 
     if opts then
@@ -183,11 +184,6 @@ function query(self, qname, opts)
 
     if not qtype then
         qtype = 1  -- A record
-    end
-
-    local id = self._id   -- for regression testing
-    if not id then
-        id = rand(0, 65535)   -- two bytes
     end
 
     local ident_hi = char(rshift(id, 8))
@@ -203,21 +199,14 @@ function query(self, qname, opts)
 
     local name = gsub(qname, "([^.]+)%.?", encode_name) .. '\0'
 
-    local query = {
+    return {
         ident_hi, ident_lo, flags, nqs, nan, nns, nar,
         name, typ, class
     }
+end
 
-    local ok, err = sock:send(query)
-    if not ok then
-        return nil, "failed to send DNS request: " .. err
-    end
 
-    local buf, err = sock:receive(512)
-    if not buf then
-        return nil, "failed to receive DNS response: " .. err
-    end
-
+local function parse_response(buf, id)
     local n = strlen(buf)
     if n < 12 then
         return nil, 'truncated';
@@ -232,7 +221,8 @@ function query(self, qname, opts)
     -- print("id: ", id, ", ans id: ", ans_id)
 
     if ans_id ~= id then
-        return nil, format("identifier mismatch: %d ~= %d", ans_id, id)
+        -- identifier mismatch and throw it away
+        return nil, "id mismatch"
     end
 
     local flags_hi = byte(buf, 3)
@@ -423,6 +413,59 @@ function query(self, qname, opts)
     end
 
     return answers
+end
+
+
+function query(self, qname, opts)
+    local socks = self.socks
+    if not socks then
+        return nil, nil, "not initialized"
+    end
+
+    local sock = pick_sock(self, socks)
+
+    local id = self._id   -- for regression testing
+    if not id then
+        id = rand(0, 65535)   -- two bytes
+    end
+
+    local query = build_request(qname, id, opts)
+
+    local retrans = self.retrans
+
+    -- print("retrans: ", retrans)
+
+    for i = 1, retrans do
+        local ok, err = sock:send(concat(query, ""))
+        if not ok then
+            return nil, "failed to send DNS request: " .. err
+        end
+
+        local buf, err
+        for j = 1, 128 do
+            buf, err = sock:receive(512)
+            if err ~= "id mismatch" then
+                break
+            end
+        end
+
+        if buf then
+            local answers, err = parse_response(buf, id)
+            if not answers then
+                if err ~= "id mismatch" then
+                    return nil, err
+                end
+            else
+                return answers
+            end
+        end
+
+        if err ~= "timeout" or i == retrans then
+            return nil, "failed to receive DNS response: " .. err
+        end
+    end
+
+    -- impossible to reach here
 end
 
 
