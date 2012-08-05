@@ -177,6 +177,7 @@ TODO
 * TCP transmission mode
 * Concurrent (or parallel) query mode
 * Better support for other resource record types like `MX`
+* Support for the DNS inverse queries
 
 Author
 ======
