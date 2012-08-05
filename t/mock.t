@@ -892,3 +892,49 @@ failed to query: truncated
 --- no_error_log
 [error]
 
+
+
+=== TEST 20: bad QR flag (0)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} },
+                retrans = 3,
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r:set_timeout(20)   -- in ms
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    qr => 0,
+    qname => 'www.google.com',
+}
+--- request
+GET /t
+--- response_body
+failed to query: bad QR flag in the DNS response
+--- no_error_log
+[error]
+

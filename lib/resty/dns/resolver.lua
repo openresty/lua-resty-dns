@@ -233,7 +233,7 @@ local function parse_response(buf, id)
     -- print(format("flags: 0x%x", flags))
 
     if band(flags, 0x8000) == 0 then
-        return nil, format("invalid DNS response flag 0x%x", flags)
+        return nil, format("bad QR flag in the DNS response")
     end
 
     if band(flags, 0x200) ~= 0 then
