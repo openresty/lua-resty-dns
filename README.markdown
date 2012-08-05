@@ -83,7 +83,7 @@ It accepts a `opts` table argument. The following options are supported:
 
 query
 -----
-`syntax: answers, err = r:query(name, opts?)`
+`syntax: answers, err = r:query(name, options?)`
 
 Performs a DNS standard query to the nameservers specified by the `new` method,
 and returns all the answer records in an array-like Lua table. In case of errors, it will
@@ -104,6 +104,11 @@ which usually takes some of the following fields:
 	The time-to-live (TTL) value in seconds for the current resource record.
 * `class`
 	The current resource record class, possible values are `1` (`CLASS_IN`) or any other values allowed by RFC 1035.
+
+This method also takes an optional `options` argument table, which takes the following fields:
+
+* `qtype`
+	The type of the question. Possible values are `1` (`TYPE_A`), `5` (`TYPE_CNAME`), `28` (`TYPE_AAAA`), or any other QTYPE value specified by RFC 1035 and RFC 3596. Default to `1` (`TYPE_A`).
 
 set_timeout
 -----------
