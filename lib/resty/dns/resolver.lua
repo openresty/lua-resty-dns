@@ -30,6 +30,7 @@ local re_sub = ngx.re.sub
 TYPE_A = 1
 TYPE_CNAME = 5
 TYPE_AAAA = 28
+CLASS_IN = 1
 
 
 local resolver_errstrs = {
@@ -316,7 +317,7 @@ local function parse_response(buf, id)
         type_lo = byte(buf, pos + 1)
         local typ = lshift(type_hi, 8) + type_lo
 
-        ans.typ = typ
+        ans.type = typ
 
         -- print("type: ", typ)
 

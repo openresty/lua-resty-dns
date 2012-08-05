@@ -61,7 +61,7 @@ __DATA__
 --- request
 GET /t
 --- response_body
-records: [{"address":"127.0.0.1","class":1,"ttl":123456,"name":"www.google.com","typ":1}]
+records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456}]
 --- no_error_log
 [error]
 
@@ -225,7 +225,7 @@ failed to query: truncated
 --- request
 GET /t
 --- response_body
-records: [{"address":"127.0.0.1","class":1,"ttl":123456,"name":"www.google.com","typ":1},{"address":"0:0:0:0:0:0:0:1","class":1,"ttl":0,"name":"l.www.google.com","typ":28}]
+records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456},{"address":"0:0:0:0:0:0:0:1","type":28,"class":1,"name":"l.www.google.com","ttl":0}]
 --- no_error_log
 [error]
 
@@ -271,7 +271,7 @@ records: [{"address":"127.0.0.1","class":1,"ttl":123456,"name":"www.google.com",
 --- request
 GET /t
 --- response_body
-records: [{"cname":"blah.google.com","class":1,"ttl":125,"name":"www.google.com","typ":5}]
+records: [{"ttl":125,"type":5,"class":1,"name":"www.google.com","cname":"blah.google.com"}]
 --- no_error_log
 [error]
 
@@ -508,10 +508,11 @@ lua udp socket read timed out
 --- request
 GET /t
 --- response_body
-records: [{"address":"ff01:0:0:0:0:0:0:101","class":1,"ttl":0,"name":"l.www.google.com","typ":28}]
+records: [{"address":"ff01:0:0:0:0:0:0:101","type":28,"class":1,"name":"l.www.google.com","ttl":0}]
 --- error_log
 lua udp socket read timed out
 --- timeout: 3
+
 
 
 === TEST 11: timeout finally (re-transmission works but not enough retrans times)
@@ -558,7 +559,7 @@ lua udp socket read timed out
 --- request
 GET /t
 --- response_body
-records: [{"address":"ff01:0:0:0:0:0:0:101","class":1,"ttl":0,"name":"l.www.google.com","typ":28}]
+records: [{"address":"ff01:0:0:0:0:0:0:101","type":28,"class":1,"name":"l.www.google.com","ttl":0}]
 --- error_log
 lua udp socket read timed out
 --- timeout: 3
