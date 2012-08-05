@@ -174,6 +174,10 @@ each request.
 TODO
 ====
 
+* TCP transmission mode
+* Concurrent (or parallel) query mode
+* Better support for other resource record types like `MX`
+
 Author
 ======
 
