@@ -32,7 +32,7 @@ sub Test::Base::Filter::dns {
 
     my $qr = $t->{qr} // 1;
 
-    my $opcode = $t->{opcode} // 1;
+    my $opcode = $t->{opcode} // 0;
 
     my $aa = $t->{aa} // 0;
 

@@ -230,8 +230,14 @@ local function parse_response(buf, id)
     local flags_lo = byte(buf, 4)
     local flags = lshift(flags_hi, 8) + flags_lo
 
+    -- print(format("flags: 0x%x", flags))
+
     if band(flags, 0x8000) == 0 then
         return nil, format("invalid DNS response flag 0x%x", flags)
+    end
+
+    if band(flags, 0x200) ~= 0 then
+        return nil, "truncated"
     end
 
     local code = band(flags, 0x7f)

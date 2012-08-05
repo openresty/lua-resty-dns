@@ -54,7 +54,7 @@ __DATA__
 --- udp_reply dns
 {
     id => 125,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
     answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 }],
 }
@@ -99,7 +99,7 @@ records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl
 {
     id => 125,
     qname => 'www.google.com',
-    opcode => 1,
+    opcode => 0,
 }
 --- request
 GET /t
@@ -215,7 +215,7 @@ failed to query: truncated
 --- udp_reply dns
 {
     id => 125,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
     answer => [
         { name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 },
@@ -262,7 +262,7 @@ records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl
 --- udp_reply dns
 {
     id => 125,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
     answer => [
         { name => "www.google.com", cname => "blah.google.com", ttl => 125 },
@@ -308,7 +308,7 @@ records: [{"ttl":125,"type":5,"class":1,"name":"www.google.com","cname":"blah.go
 --- udp_reply dns
 {
     id => 125,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
     answer => [
         { name => "www.google.com", cname => "blah.google.com", ttl => 125, rdlength => 3 },
@@ -354,7 +354,7 @@ failed to query: bad cname record length: 17 ~= 3
 --- udp_reply dns
 {
     id => 125,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
     answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456, rdlength => 1 }],
 }
@@ -398,7 +398,7 @@ failed to query: bad A record value length: 1
 --- udp_reply dns
 {
     id => 125,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
     answer => [
         { name => "l.www.google.com", ipv6 => "::1", ttl => 0, rdlength => 21 },
@@ -448,7 +448,7 @@ failed to query: bad AAAA record value length: 21
 --- udp_reply dns
 {
     id => 125,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
     answer => [
         { name => "l.www.google.com", ipv6 => "::1", ttl => 0 },
@@ -499,7 +499,7 @@ lua udp socket read timed out
 --- udp_reply dns
 {
     id => 125,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
     answer => [
         { name => "l.www.google.com", ipv6 => "FF01::101", ttl => 0 },
@@ -550,7 +550,7 @@ lua udp socket read timed out
 --- udp_reply dns
 {
     id => 125,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
     answer => [
         { name => "l.www.google.com", ipv6 => "FF01::101", ttl => 0 },
@@ -601,7 +601,7 @@ lua udp socket read timed out
 {
     id => 125,
     rcode => 1,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
 }
 --- request
@@ -648,7 +648,7 @@ failed to query: server returned code 1: format error
 {
     id => 125,
     rcode => 2,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
 }
 --- request
@@ -695,7 +695,7 @@ failed to query: server returned code 2: server failure
 {
     id => 125,
     rcode => 3,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
 }
 --- request
@@ -742,7 +742,7 @@ failed to query: server returned code 3: name error
 {
     id => 125,
     rcode => 4,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
 }
 --- request
@@ -789,7 +789,7 @@ failed to query: server returned code 4: not implemented
 {
     id => 125,
     rcode => 5,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
 }
 --- request
@@ -836,13 +836,59 @@ failed to query: server returned code 5: refused
 {
     id => 125,
     rcode => 6,
-    opcode => 1,
+    opcode => 0,
     qname => 'www.google.com',
 }
 --- request
 GET /t
 --- response_body
 failed to query: server returned code 6: unknown
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: TC (TrunCation) = 1
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} },
+                retrans = 3,
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r:set_timeout(20)   -- in ms
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    tc => 1,
+    qname => 'www.google.com',
+}
+--- request
+GET /t
+--- response_body
+failed to query: truncated
 --- no_error_log
 [error]
 
