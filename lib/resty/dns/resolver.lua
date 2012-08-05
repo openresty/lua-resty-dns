@@ -34,11 +34,11 @@ CLASS_IN = 1
 
 
 local resolver_errstrs = {
-    "Format error",     -- 1
-    "Server failure",   -- 2
-    "Name Error",       -- 3
-    "Not Implemented",  -- 4
-    "Refused",          -- 5
+    "format error",     -- 1
+    "server failure",   -- 2
+    "name error",       -- 3
+    "not implemented",  -- 4
+    "refused",          -- 5
 }
 
 local mt = { __index = class }
@@ -239,7 +239,7 @@ local function parse_response(buf, id)
     -- print(format("code: %d", code))
 
     if code ~= 0 then
-        return nil, format("server returned %d: %s", code,
+        return nil, format("server returned code %d: %s", code,
                            resolver_errstrs[code] or "unknown")
     end
 
