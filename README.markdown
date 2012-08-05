@@ -6,7 +6,7 @@ lua-resty-dns - Lua DNS resolver for the ngx_lua based on the cosocket API
 Status
 ======
 
-This library is still under early development, and but usable yet.
+This library is already usable but is still considered experimental.
 
 The API is still in flux and will change without notice.
 
@@ -20,7 +20,7 @@ http://wiki.nginx.org/HttpLuaModule
 This Lua library takes advantage of ngx_lua's cosocket API, which ensures
 100% nonblocking behavior.
 
-Note that at least [ngx_lua 0.5.11](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.2.1.9](http://openresty.org/#Download) is required.
+Note that at least [ngx_lua 0.5.12](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.2.1.11rc2](http://agentzh.org/misc/nginx/ngx_openresty-1.2.1.11rc2.tar.gz) is required.
 
 Synopsis
 ========
@@ -52,7 +52,7 @@ Synopsis
                 end
 
                 for ans in answers do
-                    local typ = ans.typ
+                    local typ = ans.type
                     local addr = ans.address
                     local class = ans.class
                     local cname = ans.cname
@@ -68,14 +68,87 @@ Methods
 
 new
 ---
-`syntax: r, err = dns.resolver:new(opts)`
+`syntax: r, err = resty.dns.resolver:new(opts)`
 
 Creates a dns.resolver object. Returns `nil` and an message string on error.
 
 It accepts a `opts` table argument. The following options are supported:
 
 * `nameservers`
-: a list of nameservers to be used. Each nameserver entry can be either a single hostname string or a table holding both the hostname string and the port number.
+	a list of nameservers to be used. Each nameserver entry can be either a single hostname string or a table holding both the hostname string and the port number. The nameserver is picked up by a simple round-robin algorithm for each `query` method call. This option is required.
+* `retrans`
+	the total number of times of retransmitting the DNS request when receiving a DNS response times out according to the `timeout` setting. Default to `4` times.
+* `timeout`
+	the time in milliseconds for waiting for the respond for a single attempt of request transmition. note that this is ''not'' the maximal total waiting time before giving up, the maximal total waiting time can be calculated by the expression `timeout x retrans`. The `timeout` setting can also be changed by calling the `set_timeout` method. The default `timeout` setting is 1000 milliseconds, or 1 seconds.
+
+query
+-----
+`syntax: answers, err = r:query(name, opts?)`
+
+Performs a DNS standard query to the nameservers specified by the `new` method,
+and returns all the answer records in an array-like Lua table. In case of errors, it will
+return `nil` and a string describing the error instead.
+
+Each entry in the `answers` returned table value is also a hash-like Lua table
+which usually takes some of the following fields:
+
+* `name`
+	The resource record name.
+* `type`
+	The current resource record type, possible values are `1` (`TYPE_A`), `5` (`TYPE_CNAME`), `28` (`TYPE_AAAA`), and any other values allowed by RFC 1035.
+* `address`
+	The IPv4 or IPv6 address in their textual representations when the resource record type is either `1` (`TYPE_A`) or `28` (`TYPE_AAAA`), respectively. Secussesive 16-bit zero groups in IPv6 addresses will not be compressed by default, if you want that, you need to call the `compress_ipv6_addr` static method instead.
+* `cname`
+	The (decoded) record data value for `CNAME` resource records.
+* `ttl`
+	The time-to-live (TTL) value in seconds for the current resource record.
+* `class`
+	The current resource record class, possible values are `1` (`CLASS_IN`) or any other values allowed by RFC 1035.
+
+set_timeout
+-----------
+`syntax: r:set_timeout(time)`
+
+Overrides the current `timeout` setting by the `time` argument in milliseconds for all the nameserver peers.
+
+compress_ipv6_addr
+------------------
+`syntax: compressed = resty.dns.resolver.compress_ipv6_addr(address)`
+
+Compresses the successive 16-bit zero groups in the textual format of the IPv6 address.
+
+For example,
+
+    local resolver = require "resty.dns.resolver"
+    local compress = resolver.compress_ipv6_addr
+    local new_addr = compress("FF01:0:0:0:0:0:0:101")
+
+will yield `FF01::101` in the `new_addr` return value.
+
+Constants
+=========
+
+TYPE_A
+------
+
+The `A` resource record type, equal to the decimal number `1`.
+
+TYPE_CNAME
+----------
+
+The `CNAME` resource record type, equal to the decimal number `5`.
+
+TYPE_AAAA
+---------
+`syntax: typ = r.TYPE_AAAA`
+
+The `AAAA` resource record type, equal to the decimal number `28`.
+
+CLASS_IN
+--------
+`syntax: class = r.CLASS_IN`
+
+The `Internet` resource record type, equal to the decimal number `1`.
 
 Limitations
 ===========
