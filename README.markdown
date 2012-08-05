@@ -82,6 +82,8 @@ It accepts a `opts` table argument. The following options are supported:
 	the total number of times of retransmitting the DNS request when receiving a DNS response times out according to the `timeout` setting. Default to `5` times. When trying to retransmit the query, the next nameserver according to the round-robin algorithm will be picked up.
 * `timeout`
 	the time in milliseconds for waiting for the respond for a single attempt of request transmition. note that this is ''not'' the maximal total waiting time before giving up, the maximal total waiting time can be calculated by the expression `timeout x retrans`. The `timeout` setting can also be changed by calling the `set_timeout` method. The default `timeout` setting is 2000 milliseconds, or 2 seconds.
+* `no_recurse`
+	a boolean flag controls whether to disable the "recursion desired" (RD) flag in the UDP request. Default to `false`.
 
 query
 -----

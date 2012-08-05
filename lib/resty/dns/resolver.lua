@@ -85,7 +85,10 @@ function new(class, opts)
     end
 
     return setmetatable(
-                { cur = 1, socks = socks, retrans = opts.retrans or 5 }, mt)
+                { cur = 1, socks = socks,
+                  retrans = opts.retrans or 5,
+                  no_recurse = opts.no_recurse,
+                }, mt)
 end
 
 
@@ -176,7 +179,7 @@ local function decode_name(buf, pos)
 end
 
 
-local function build_request(qname, id, opts)
+local function build_request(qname, id, no_recurse, opts)
     local qtype
 
     if opts then
@@ -190,7 +193,14 @@ local function build_request(qname, id, opts)
     local ident_hi = char(rshift(id, 8))
     local ident_lo = char(band(id, 0xff))
 
-    local flags = "\1\0"    -- hard-coded RD flag
+    local flags
+    if no_recurse then
+        print("found no recurse")
+        flags = "\0\0"
+    else
+        flags = "\1\0"
+    end
+
     local nqs = "\0\1"
     local nan = "\0\0"
     local nns = "\0\0"
@@ -434,7 +444,10 @@ function query(self, qname, opts)
         id = rand(0, 65535)   -- two bytes
     end
 
-    local query = build_request(qname, id, opts)
+    local query = build_request(qname, id, self.no_recurse, opts)
+
+    -- local cjson = require "cjson"
+    -- print("query: ", cjson.encode(concat(query, "")))
 
     local retrans = self.retrans
 
@@ -443,7 +456,7 @@ function query(self, qname, opts)
     for i = 1, retrans do
         local sock = pick_sock(self, socks)
 
-        local ok, err = sock:send(concat(query, ""))
+        local ok, err = sock:send(query)
         if not ok then
             return nil, "failed to send DNS request: " .. err
         end

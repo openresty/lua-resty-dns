@@ -6,7 +6,7 @@ use Cwd qw(cwd);
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks());
+plan tests => repeat_each() * (3 * blocks() + 2);
 
 my $pwd = cwd();
 
@@ -17,7 +17,7 @@ our $HttpConfig = qq{
 
 $ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
 
-no_long_string();
+#no_long_string();
 
 run_tests();
 
@@ -60,6 +60,8 @@ __DATA__
 }
 --- request
 GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
 --- response_body
 records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456}]
 --- no_error_log
@@ -935,6 +937,54 @@ failed to query: truncated
 GET /t
 --- response_body
 failed to query: bad QR flag in the DNS response
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: Recursion Desired off
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} },
+                retrans = 3,
+                no_recurse = true,
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r:set_timeout(20)   -- in ms
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_query eval
+"\x{00}}\x{00}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
+--- udp_reply dns
+{
+    id => 125,
+    qname => 'www.google.com',
+}
+--- request
+GET /t
+--- response_body
+records: {}
 --- no_error_log
 [error]
 
