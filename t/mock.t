@@ -422,7 +422,7 @@ failed to query: bad AAAA record value length: 21
 
             local r, err = resolver:new{
                 nameservers = { {"127.0.0.1", 1953} },
-                -- retrans = 4,
+                retrans = 4,
             }
             if not r then
                 ngx.say("failed to instantiate resolver: ", err)

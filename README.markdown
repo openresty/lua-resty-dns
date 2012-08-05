@@ -38,11 +38,11 @@ Synopsis
                         {"8.8.8.8", 53},
                         "8.8.4.4",
                     },
-                    retrans = 4,    -- default to 4 re-transmissions on timeout
-                    timeout = 1000, -- default to 1000ms
+                    retrans = 5,    -- default to 5 re-transmissions on timeout
+                    timeout = 2000, -- default to 2000ms
                 }
 
-                r:set_timeout(100) -- reset to 100ms
+                r:set_timeout(1000) -- reset to 1000ms
 
                 -- other query types are r.TYPE_AAAA and r.TYPE_CNAME
                 local answers, err = r:query("www.google.com",
@@ -79,9 +79,9 @@ It accepts a `opts` table argument. The following options are supported:
 * `nameservers`
 	a list of nameservers to be used. Each nameserver entry can be either a single hostname string or a table holding both the hostname string and the port number. The nameserver is picked up by a simple round-robin algorithm for each `query` method call. This option is required.
 * `retrans`
-	the total number of times of retransmitting the DNS request when receiving a DNS response times out according to the `timeout` setting. Default to `4` times.
+	the total number of times of retransmitting the DNS request when receiving a DNS response times out according to the `timeout` setting. Default to `5` times. When trying to retransmit the query, the next nameserver according to the round-robin algorithm will be picked up.
 * `timeout`
-	the time in milliseconds for waiting for the respond for a single attempt of request transmition. note that this is ''not'' the maximal total waiting time before giving up, the maximal total waiting time can be calculated by the expression `timeout x retrans`. The `timeout` setting can also be changed by calling the `set_timeout` method. The default `timeout` setting is 1000 milliseconds, or 1 seconds.
+	the time in milliseconds for waiting for the respond for a single attempt of request transmition. note that this is ''not'' the maximal total waiting time before giving up, the maximal total waiting time can be calculated by the expression `timeout x retrans`. The `timeout` setting can also be changed by calling the `set_timeout` method. The default `timeout` setting is 2000 milliseconds, or 2 seconds.
 
 query
 -----
@@ -174,7 +174,7 @@ each request.
 TODO
 ====
 
-* TCP transmission mode
+* TCP transport mode
 * Concurrent (or parallel) query mode
 * Better support for other resource record types like `MX`
 * Support for the DNS inverse queries

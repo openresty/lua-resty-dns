@@ -54,7 +54,7 @@ function new(class, opts)
         return nil, "no nameservers specified"
     end
 
-    local timeout = opts.timeout or 1000  -- default 1 sec
+    local timeout = opts.timeout or 2000  -- default 2 sec
 
     local socks = {}
     for i = 1, #servers do
@@ -85,7 +85,7 @@ function new(class, opts)
     end
 
     return setmetatable(
-                { cur = 1, socks = socks, retrans = opts.retrans or 4 }, mt)
+                { cur = 1, socks = socks, retrans = opts.retrans or 5 }, mt)
 end
 
 
@@ -423,8 +423,6 @@ function query(self, qname, opts)
         return nil, nil, "not initialized"
     end
 
-    local sock = pick_sock(self, socks)
-
     local id = self._id   -- for regression testing
     if not id then
         id = rand(0, 65535)   -- two bytes
@@ -437,6 +435,8 @@ function query(self, qname, opts)
     -- print("retrans: ", retrans)
 
     for i = 1, retrans do
+        local sock = pick_sock(self, socks)
+
         local ok, err = sock:send(concat(query, ""))
         if not ok then
             return nil, "failed to send DNS request: " .. err
