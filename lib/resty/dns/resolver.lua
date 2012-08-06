@@ -465,7 +465,7 @@ function query(self, qname, opts)
 
         local buf, err
         for j = 1, 128 do
-            buf, err = sock:receive(512)
+            buf, err = sock:receive(4096)
             if err ~= "id mismatch" then
                 break
             end
