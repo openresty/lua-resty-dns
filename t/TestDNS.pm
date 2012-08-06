@@ -2,7 +2,7 @@ package TestDNS;
 
 use 5.010001;
 use Test::Nginx::Socket -Base;
-use JSON::XS;
+#use JSON::XS;
 
 use constant {
     TYPE_A => 1,
@@ -16,12 +16,57 @@ sub encode_ipv4 ($);
 sub encode_ipv6 ($);
 
 sub Test::Base::Filter::dns {
-    my ($filter, $code) = @_;
+    my ($self, $code) = @_;
+
+    my $block = $self->current_block;
+
+    my $pointer_spec = $block->dns_pointers;
+    my @pointers;
+    if (defined $pointer_spec) {
+        my @loops = split /\s*,\s*/, $pointer_spec;
+        for my $loop (@loops) {
+            my @nodes = split /\s*=>\s*/, $loop;
+            my $prev;
+            for my $n (@nodes) {
+                if ($n !~ /^\d+$/ || $n == 0) {
+                    die "bad name ID in the --- dns_pointers: $n\n";
+                }
+
+                if (!defined $prev) {
+                    $prev = $n;
+                    next;
+                }
+
+                $pointers[$prev] = $n;
+            }
+        }
+    }
 
     my $t = eval $code;
     if ($@) {
         die "failed to evaluate code $code: $@\n";
     }
+
+    my @raw_names;
+    push @raw_names, \($t->{qname});
+
+    my $answers = $t->{answer} // [];
+    if (!ref $answers) {
+        $answers = [$answers];
+    }
+
+    for my $ans (@$answers) {
+        push @raw_names, \($ans->{name});
+        if (defined $ans->{cname}) {
+            push @raw_names, \($ans->{cname});
+        }
+    }
+
+    for my $rname (@raw_names) {
+        $$rname = encode_name($$rname // "");
+    }
+
+    my $qname = $t->{qname};
 
     my $s = '';
 
@@ -49,19 +94,12 @@ sub Test::Base::Filter::dns {
 
     #warn "flags: ", length($flags), " ", encode_json([$flags]);
 
-    my $answers = $t->{answer} // [];
-    if (!ref $answers) {
-        $answers = [$answers];
-    }
-
     my $qdcount = $t->{qdcount} // 1;
     my $ancount = $t->{ancount} // scalar @$answers;
     my $nscount = 0;
     my $arcount = 0;
 
     $s .= pack("nnnn", $qdcount, $ancount, $nscount, $arcount);
-
-    my $qname = encode_name($t->{qname} // "");
 
     #warn "qname: ", length($qname), " ", encode_json([$qname]);
 
@@ -73,7 +111,7 @@ sub Test::Base::Filter::dns {
     $s .= pack("nn", $qs_type, $qs_class);
 
     for my $ans (@$answers) {
-        my $name = encode_name($ans->{name} // "");
+        my $name = $ans->{name};
         my $type = $ans->{type};
         my $class = $ans->{class};
         my $ttl = $ans->{ttl};
@@ -100,7 +138,7 @@ sub Test::Base::Filter::dns {
 
         my $cname = $ans->{cname};
         if (defined $cname) {
-            $rddata //= encode_name($cname);
+            $rddata //= $cname;
             $rdlength //= length $rddata;
             $type //= TYPE_CNAME;
             $class //= CLASS_INTERNET;
