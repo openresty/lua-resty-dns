@@ -2,7 +2,7 @@
 
 module("resty.dns.resolver", package.seeall)
 
-_VERSION = '0.01'
+_VERSION = '0.02'
 
 
 local bit = require "bit"
