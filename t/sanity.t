@@ -111,7 +111,7 @@ GET /t
 --- request
 GET /t
 --- response_body_like chop
-^records: \[.*?"address":"\d*(?::\d*)+\d*".*?\]$
+^records: \[.*?"address":"[a-fA-F0-9]*(?::[a-fA-F0-9]*)+".*?\]$
 --- no_error_log
 [error]
 
