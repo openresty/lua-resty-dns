@@ -56,8 +56,10 @@ function new(class, opts)
 
     local timeout = opts.timeout or 2000  -- default 2 sec
 
+    local n = #servers
+
     local socks = {}
-    for i = 1, #servers do
+    for i = 1, n do
         local server = servers[i]
         local sock, err = udp()
         if not sock then
@@ -85,7 +87,7 @@ function new(class, opts)
     end
 
     return setmetatable(
-                { cur = 1, socks = socks,
+                { cur = rand(1, n), socks = socks,
                   retrans = opts.retrans or 5,
                   no_recurse = opts.no_recurse,
                 }, mt)
