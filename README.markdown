@@ -30,36 +30,31 @@ Synopsis
     lua_package_path "/path/to/lua-resty-dns/lib/?.lua;;";
 
     server {
-        location /test {
+        location = /dns {
             content_by_lua '
                 local resolver = require "resty.dns.resolver"
-                local r = resolver:new{
-                    nameservers = {
-                        {"8.8.8.8", 53},
-                        "8.8.4.4",
-                    },
-                    retrans = 5,    -- default to 5 re-transmissions on timeout
-                    timeout = 2000, -- default to 2000ms
+                local r, err = resolver:new{
+                    nameservers = {"8.8.8.8", {"8.8.4.4", 53} },
+                    retrans = 5,  -- 5 retransmissions on receive timeout
+                    timeout = 2000,  -- 2 sec
                 }
 
-                r:set_timeout(1000) -- reset to 1000ms
-
-                -- other query types are r.TYPE_AAAA and r.TYPE_CNAME
-                local answers, err = r:query("www.google.com",
-                        { qtype = r.TYPE_A })
-
-                if not answers then
-                    ngx.say("failed to query: ", err)
+                if not r then
+                    ngx.say("failed to instantiate the resolver: ", err)
                     return
                 end
 
-                for ans in answers do
-                    local typ = ans.type
-                    local addr = ans.address
-                    local class = ans.class
-                    local cname = ans.cname
-                    local ttl = ans.ttl
-                    -- process these fields
+                local answers, err = r:query("www.google.com")
+                if not answers then
+                    ngx.say("failed to query the DNS server: ", err)
+                    return
+                end
+
+                for i = 1, #answers do
+                    local ans = answers[i]
+                    ngx.say(ans.name, " ", ans.address or ans.cname,
+                            " type:", ans.type, " class:", ans.class,
+                            " ttl:", ans.ttl)
                 end
             ';
         }
