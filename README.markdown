@@ -142,6 +142,11 @@ TYPE_CNAME
 
 The `CNAME` resource record type, equal to the decimal number `5`.
 
+TYPE_MX
+-------
+
+The `MX` resource record type, equal to the decimal number `15`.
+
 TYPE_AAAA
 ---------
 `syntax: typ = r.TYPE_AAAA`
@@ -173,7 +178,7 @@ TODO
 
 * TCP transport mode
 * Concurrent (or parallel) query mode
-* Better support for other resource record types like `MX`
+* Better support for other resource record types like `NS`, `PTR`, and `TXT`.
 * Support for the DNS inverse queries
 
 Author
