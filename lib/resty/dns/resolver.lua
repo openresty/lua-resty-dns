@@ -28,10 +28,12 @@ local concat = table.concat
 local re_sub = ngx.re.sub
 
 
-TYPE_A = 1
-TYPE_CNAME = 5
-TYPE_AAAA = 28
-CLASS_IN = 1
+TYPE_A      = 1
+TYPE_CNAME  = 5
+TYPE_MX     = 15
+TYPE_AAAA   = 28
+
+CLASS_IN    = 1
 
 
 local resolver_errstrs = {
@@ -427,7 +429,37 @@ local function parse_response(buf, id)
 
             pos = pos + 16
 
+        elseif typ == TYPE_MX then
+
+            -- print("len = ", len)
+
+            if len < 3 then
+                return nil, "bad MX record value length: " .. len
+            end
+
+            local pref_hi = byte(buf, pos)
+            local pref_lo = byte(buf, pos + 1)
+
+            ans.preference = lshift(pref_hi, 8) + pref_lo
+
+            local host, p = decode_name(buf, pos + 2)
+            if not host then
+                return nil, pos
+            end
+
+            if p - pos ~= len then
+                return nil, format("bad cname record length: %d ~= %d",
+                                   p - pos, len)
+            end
+
+            ans.exchange = host
+
+            pos = p
+
         else
+            -- for unknown types, just forward the raw value
+
+            ans.rdata = substr(buf, pos, pos + len - 1)
             pos = pos + len
         end
     end
