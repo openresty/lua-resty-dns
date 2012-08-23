@@ -586,7 +586,7 @@ lua udp socket read timed out
                 return
             end
 
-            r:set_timeout(20)   -- in ms
+            r:set_timeout(200)   -- in ms
 
             r._id = 125
 
@@ -633,7 +633,7 @@ failed to query: server returned code 1: format error
                 return
             end
 
-            r:set_timeout(20)   -- in ms
+            r:set_timeout(200)   -- in ms
 
             r._id = 125
 
@@ -680,7 +680,7 @@ failed to query: server returned code 2: server failure
                 return
             end
 
-            r:set_timeout(20)   -- in ms
+            r:set_timeout(200)   -- in ms
 
             r._id = 125
 
@@ -727,7 +727,7 @@ failed to query: server returned code 3: name error
                 return
             end
 
-            r:set_timeout(20)   -- in ms
+            r:set_timeout(200)   -- in ms
 
             r._id = 125
 
@@ -774,7 +774,7 @@ failed to query: server returned code 4: not implemented
                 return
             end
 
-            r:set_timeout(20)   -- in ms
+            r:set_timeout(200)   -- in ms
 
             r._id = 125
 
@@ -821,7 +821,7 @@ failed to query: server returned code 5: refused
                 return
             end
 
-            r:set_timeout(20)   -- in ms
+            r:set_timeout(200)   -- in ms
 
             r._id = 125
 
@@ -868,7 +868,7 @@ failed to query: server returned code 6: unknown
                 return
             end
 
-            r:set_timeout(20)   -- in ms
+            r:set_timeout(1000)   -- in ms
 
             r._id = 125
 
@@ -914,7 +914,7 @@ connect() failed
                 return
             end
 
-            r:set_timeout(20)   -- in ms
+            r:set_timeout(1000)   -- in ms
 
             r._id = 125
 
@@ -961,7 +961,7 @@ failed to query: bad QR flag in the DNS response
                 return
             end
 
-            r:set_timeout(20)   -- in ms
+            r:set_timeout(200)   -- in ms
 
             r._id = 125
 
@@ -1128,7 +1128,7 @@ id mismatch in the DNS reply: 127 ~= 125
                 return
             end
 
-            r:set_timeout(20)   -- in ms
+            r:set_timeout(1000)   -- in ms
 
             r._id = 125
 
