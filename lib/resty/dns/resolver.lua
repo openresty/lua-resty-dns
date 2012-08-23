@@ -26,6 +26,9 @@ local lshift = bit.lshift
 local insert = table.insert
 local concat = table.concat
 local re_sub = ngx.re.sub
+local tcp = ngx.socket.tcp
+local log = ngx.log
+local DEBUG = ngx.DEBUG
 
 
 TYPE_A      = 1
@@ -62,6 +65,7 @@ function new(class, opts)
     local n = #servers
 
     local socks = {}
+
     for i = 1, n do
         local server = servers[i]
         local sock, err = udp()
@@ -77,6 +81,7 @@ function new(class, opts)
         else
             host = server
             port = 53
+            servers[i] = {host, port}
         end
 
         local ok, err = sock:setpeername(host, port)
@@ -89,8 +94,17 @@ function new(class, opts)
         insert(socks, sock)
     end
 
+    local tcp_sock, err = tcp()
+    if not tcp_sock then
+        return nil, "failed to create tcp socket: " .. err
+    end
+
+    tcp_sock:settimeout(timeout)
+
     return setmetatable(
                 { cur = rand(1, n), socks = socks,
+                  tcp_sock = tcp_sock,
+                  servers = servers,
                   retrans = opts.retrans or 5,
                   no_recurse = opts.no_recurse,
                 }, mt)
@@ -110,6 +124,19 @@ local function pick_sock(self, socks)
 end
 
 
+local function get_cur_server(self)
+    local cur = self.cur
+
+    local servers = self.servers
+
+    if cur == 1 then
+        return servers[#servers]
+    end
+
+    return servers[cur - 1]
+end
+
+
 function set_timeout(self, timeout)
     local socks = self.socks
     if not socks then
@@ -120,6 +147,13 @@ function set_timeout(self, timeout)
         local sock = socks[i]
         sock:settimeout(timeout)
     end
+
+    local tcp_sock = self.tcp_sock
+    if not tcp_sock then
+        return nil, "not initialized"
+    end
+
+    tcp_sock:settimeout(timeout)
 end
 
 
@@ -238,6 +272,7 @@ local function parse_response(buf, id)
 
     if ans_id ~= id then
         -- identifier mismatch and throw it away
+        log(DEBUG, "id mismatch in the DNS reply: ", ans_id, " ~= ", id)
         return nil, "id mismatch"
     end
 
@@ -468,16 +503,70 @@ local function parse_response(buf, id)
 end
 
 
+local function gen_id(self)
+    local id = self._id   -- for regression testing
+    if id then
+        return id
+    end
+    return rand(0, 65535)   -- two bytes
+end
+
+
+local function tcp_query(self, query, id)
+    local sock = self.tcp_sock
+    if not sock then
+        return "not initialized"
+    end
+
+    local server = get_cur_server(self)
+
+    local ok, err = sock:connect(server[1], server[2])
+    if not ok then
+        return nil, "failed to connect to TCP server "
+            .. concat(server, ":") .. ": " .. err
+    end
+
+    local bytes, err = sock:send(query)
+    if not bytes then
+        return nil, "failed to send query to TCP server "
+            .. concat(server, ":") .. ": " .. err
+    end
+
+    local buf, err = sock:receive(2)
+    if not buf then
+        return nil, "failed to receive the reply length field from TCP server "
+            .. concat(server, ":") .. ": " .. err
+    end
+
+    local len_hi = byte(buf, 1)
+    local len_lo = byte(buf, 2)
+    local len = lshift(len_hi, 8) + len_lo
+
+    buf, err = sock:receive(len)
+    if not buf then
+        return nil, "failed to receive the reply message body from TCP server "
+            .. concat(server, ":") .. ": " .. err
+    end
+
+    local answers, err = parse_response(buf, id)
+    if not answers then
+        return nil, "failed to parse the reply from the TCP server "
+            .. concat(server, ":") .. ": " .. err
+    end
+
+    sock:close()
+
+    return answers
+end
+
+
 function query(self, qname, opts)
     local socks = self.socks
     if not socks then
         return nil, nil, "not initialized"
     end
 
-    local id = self._id   -- for regression testing
-    if not id then
-        id = rand(0, 65535)   -- two bytes
-    end
+    local id = gen_id(self)
 
     local query = build_request(qname, id, self.no_recurse, opts)
 
@@ -493,30 +582,43 @@ function query(self, qname, opts)
 
         local ok, err = sock:send(query)
         if not ok then
-            return nil, "failed to send DNS request: " .. err
+            local server = get_cur_server(self)
+            return nil, "failed to send request to UDP server "
+                .. concat(server, ":") .. ": " .. err
         end
 
         local buf, err
+
         for j = 1, 128 do
             buf, err = sock:receive(4096)
-            if err ~= "id mismatch" then
+
+            if err then
                 break
             end
-        end
 
-        if buf then
-            local answers, err = parse_response(buf, id)
-            if not answers then
-                if err ~= "id mismatch" then
-                    return nil, err
+            if buf then
+                local answers
+                answers, err = parse_response(buf, id)
+                if not answers then
+                    if err == "truncated" then
+                        return tcp_query(self, query, id)
+                    end
+
+                    if err ~= "id mismatch" then
+                        return nil, err
+                    end
+
+                    -- retry receiving when err == "id mismatch"
+                else
+                    return answers
                 end
-            else
-                return answers
             end
         end
 
         if err ~= "timeout" or i == retrans then
-            return nil, "failed to receive DNS response: " .. err
+            local server = get_cur_server(self)
+            return nil, "failed to receive reply from UDP server "
+                .. concat(server, ":") .. ": " .. err
         end
     end
 

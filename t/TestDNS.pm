@@ -1,5 +1,8 @@
 package TestDNS;
 
+use strict;
+use warnings;
+
 use 5.010001;
 use Test::Nginx::Socket -Base;
 #use JSON::XS;
@@ -14,6 +17,7 @@ use constant {
 sub encode_name ($);
 sub encode_ipv4 ($);
 sub encode_ipv6 ($);
+sub gen_dns_reply ($);
 
 sub Test::Base::Filter::dns {
     my ($self, $code) = @_;
@@ -42,10 +46,33 @@ sub Test::Base::Filter::dns {
         }
     }
 
-    my $t = eval $code;
+    my $input = eval $code;
     if ($@) {
         die "failed to evaluate code $code: $@\n";
     }
+
+    if (!ref $input) {
+        return $input;
+    }
+
+    if (ref $input eq 'ARRAY') {
+        my @replies;
+        for my $t (@$input) {
+            push @replies, gen_dns_reply($t);
+        }
+
+        return \@replies;
+    }
+
+    if (ref $input eq 'HASH') {
+        return gen_dns_reply($input);
+    }
+
+    return $input;
+}
+
+sub gen_dns_reply ($) {
+    my $t = shift;
 
     my @raw_names;
     push @raw_names, \($t->{qname});

@@ -6,7 +6,7 @@ use Cwd qw(cwd);
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks() + 2);
+plan tests => repeat_each() * (3 * blocks() + 6);
 
 my $pwd = cwd();
 
@@ -17,7 +17,9 @@ our $HttpConfig = qq{
 
 $ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
 
-#no_long_string();
+log_level('warn');
+
+no_long_string();
 
 run_tests();
 
@@ -142,9 +144,9 @@ records: {}
 --- request
 GET /t
 --- response_body
-failed to query: truncated
---- no_error_log
-[error]
+failed to query: failed to connect to TCP server 127.0.0.1:1953: connection refused
+--- error_log
+connect() failed
 
 
 
@@ -180,9 +182,9 @@ failed to query: truncated
 --- request
 GET /t
 --- response_body
-failed to query: truncated
---- no_error_log
-[error]
+failed to query: failed to connect to TCP server 127.0.0.1:1953: connection refused
+--- error_log
+connect() failed
 
 
 
@@ -459,7 +461,7 @@ failed to query: bad AAAA record value length: 21
 --- request
 GET /t
 --- response_body
-failed to query: failed to receive DNS response: timeout
+failed to query: failed to receive reply from UDP server 127.0.0.1:1953: timeout
 --- error_log
 lua udp socket read timed out
 --- timeout: 3
@@ -890,9 +892,9 @@ failed to query: server returned code 6: unknown
 --- request
 GET /t
 --- response_body
-failed to query: truncated
---- no_error_log
-[error]
+failed to query: failed to connect to TCP server 127.0.0.1:1953: connection refused
+--- error_log
+connect() failed
 
 
 
@@ -987,4 +989,124 @@ GET /t
 records: {}
 --- no_error_log
 [error]
+
+
+
+=== TEST 22: id mismatch (timeout)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} },
+                timeout = 10,
+                retrans = 2,
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 126,
+    opcode => 0,
+    qname => 'www.google.com',
+    answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 }],
+}
+--- request
+GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
+--- response_body
+failed to query: failed to receive reply from UDP server 127.0.0.1:1953: timeout
+--- error_log
+id mismatch in the DNS reply: 126 ~= 125
+--- log_level: debug
+
+
+
+=== TEST 23: id mismatch (and then match)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} },
+                timeout = 10,
+                retrans = 2,
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+[
+{
+    id => 126,
+    opcode => 0,
+    qname => 'www.google.com',
+    answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 }],
+},
+{
+    id => 127,
+    opcode => 0,
+    qname => 'www.google.com',
+    answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 }],
+},
+{
+    id => 120,
+    opcode => 0,
+    qname => 'www.google.com',
+    answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 }],
+},
+{
+    id => 125,
+    opcode => 0,
+    qname => 'www.google.com',
+    answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 }],
+},
+]
+--- request
+GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
+--- response_body
+records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456}]
+--- error_log
+id mismatch in the DNS reply: 126 ~= 125
+id mismatch in the DNS reply: 120 ~= 125
+id mismatch in the DNS reply: 127 ~= 125
+--- log_level: debug
 
