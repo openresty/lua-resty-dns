@@ -120,6 +120,27 @@ Just like the `query` method, but enforce the TCP transport mode instead of UDP.
 
 All TCP connections are short lived.
 
+Here is an example:
+
+    local resolver = require "resty.dns.resolver"
+
+    local r, err = resolver:new{
+        nameservers = { "8.8.8.8" }
+    }
+    if not r then
+        ngx.say("failed to instantiate resolver: ", err)
+        return
+    end
+
+    local ans, err = r:tcp_query("www.google.com", { qtype = r.TYPE_A })
+    if not ans then
+        ngx.say("failed to query: ", err)
+        return
+    end
+
+    local cjson = require "cjson"
+    ngx.say("records: ", cjson.encode(ans))
+
 set_timeout
 -----------
 `syntax: r:set_timeout(time)`
