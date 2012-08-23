@@ -146,3 +146,35 @@ FF01::101
 --- no_error_log
 [error]
 
+
+
+=== TEST 5: A records (TCP)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            local ans, err = r:tcp_query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- request
+GET /t
+--- response_body_like chop
+^records: \[.*?"address":"(?:\d{1,3}\.){3}\d+".*?\]$
+--- no_error_log
+[error]
+

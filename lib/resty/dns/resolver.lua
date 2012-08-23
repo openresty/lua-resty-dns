@@ -512,7 +512,7 @@ local function gen_id(self)
 end
 
 
-local function tcp_query(self, query, id)
+local function _tcp_query(self, query, id)
     local sock = self.tcp_sock
     if not sock then
         return "not initialized"
@@ -528,7 +528,13 @@ local function tcp_query(self, query, id)
             .. concat(server, ":") .. ": " .. err
     end
 
-    local bytes, err = sock:send(query)
+    query = concat(query, "")
+    local len = strlen(query)
+
+    local len_hi = char(rshift(len, 8))
+    local len_lo = char(band(len, 0xff))
+
+    local bytes, err = sock:send({len_hi, len_lo, query})
     if not bytes then
         return nil, "failed to send query to TCP server "
             .. concat(server, ":") .. ": " .. err
@@ -561,6 +567,22 @@ local function tcp_query(self, query, id)
     sock:close()
 
     return answers
+end
+
+
+function tcp_query(self, qname, opts)
+    local socks = self.socks
+    if not socks then
+        return nil, nil, "not initialized"
+    end
+
+    pick_sock(self, socks)
+
+    local id = gen_id(self)
+
+    local query = build_request(qname, id, self.no_recurse, opts)
+
+    return _tcp_query(self, query, id)
 end
 
 
@@ -605,7 +627,7 @@ function query(self, qname, opts)
                 answers, err = parse_response(buf, id)
                 if not answers then
                     if err == "truncated" then
-                        return tcp_query(self, query, id)
+                        return _tcp_query(self, query, id)
                     end
 
                     if err ~= "id mismatch" then

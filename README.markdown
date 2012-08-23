@@ -110,7 +110,15 @@ This method also takes an optional `options` argument table, which takes the fol
 	The type of the question. Possible values are `1` (`TYPE_A`), `5` (`TYPE_CNAME`), `28` (`TYPE_AAAA`), or any other QTYPE value specified by RFC 1035 and RFC 3596. Default to `1` (`TYPE_A`).
 
 When data truncation happens, the resolver will automatically retry using the TCP transport mode
-to query the current nameserver.
+to query the current nameserver. All TCP connections are short lived.
+
+tcp_query
+---------
+`syntax: answers, err = r:tcp_query(name, options?)`
+
+Just like the `query` method, but enforce the TCP transport mode instead of UDP.
+
+All TCP connections are short lived.
 
 set_timeout
 -----------
