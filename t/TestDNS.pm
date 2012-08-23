@@ -17,10 +17,18 @@ use constant {
 sub encode_name ($);
 sub encode_ipv4 ($);
 sub encode_ipv6 ($);
-sub gen_dns_reply ($);
+sub gen_dns_reply ($$);
 
 sub Test::Base::Filter::dns {
     my ($self, $code) = @_;
+
+    my $args = $self->current_arguments;
+    #warn "args: $args";
+    if (defined $args && $args ne 'tcp' && $args ne 'udp') {
+        die "Invalid argument to the \"dns\" filter: $args\n";
+    }
+
+    my $mode = $args // 'udp';
 
     my $block = $self->current_block;
 
@@ -58,21 +66,21 @@ sub Test::Base::Filter::dns {
     if (ref $input eq 'ARRAY') {
         my @replies;
         for my $t (@$input) {
-            push @replies, gen_dns_reply($t);
+            push @replies, gen_dns_reply($t, $mode);
         }
 
         return \@replies;
     }
 
     if (ref $input eq 'HASH') {
-        return gen_dns_reply($input);
+        return gen_dns_reply($input, $mode);
     }
 
     return $input;
 }
 
-sub gen_dns_reply ($) {
-    my $t = shift;
+sub gen_dns_reply ($$) {
+    my ($t, $mode) = @_;
 
     my @raw_names;
     push @raw_names, \($t->{qname});
@@ -178,6 +186,10 @@ sub gen_dns_reply ($) {
         #warn "rdlength: $rdlength, rddata: ", encode_json([$rddata]), "\n";
 
         $s .= $name . pack("nnNn", $type, $class, $ttl, $rdlength) . $rddata;
+    }
+
+    if ($mode eq 'tcp') {
+        return pack("n", length($s)) . $s;
     }
 
     return $s;

@@ -518,6 +518,8 @@ local function tcp_query(self, query, id)
         return "not initialized"
     end
 
+    log(DEBUG, "query the TCP server due to reply truncation")
+
     local server = get_cur_server(self)
 
     local ok, err = sock:connect(server[1], server[2])
@@ -541,6 +543,8 @@ local function tcp_query(self, query, id)
     local len_hi = byte(buf, 1)
     local len_lo = byte(buf, 2)
     local len = lshift(len_hi, 8) + len_lo
+
+    -- print("tcp message len: ", len)
 
     buf, err = sock:receive(len)
     if not buf then

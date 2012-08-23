@@ -6,7 +6,7 @@ use Cwd qw(cwd);
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks() + 6);
+plan tests => repeat_each() * (3 * blocks() + 8);
 
 my $pwd = cwd();
 
@@ -17,7 +17,7 @@ our $HttpConfig = qq{
 
 $ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
 
-log_level('warn');
+log_level('notice');
 
 no_long_string();
 
@@ -114,7 +114,7 @@ records: {}
 
 
 
-=== TEST 3: one byte reply
+=== TEST 3: one byte reply, truncated, without TCP server
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -852,7 +852,7 @@ failed to query: server returned code 6: unknown
 
 
 
-=== TEST 19: TC (TrunCation) = 1
+=== TEST 19: TC (TrunCation) = 1, no TCP server
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -1108,5 +1108,117 @@ records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl
 id mismatch in the DNS reply: 126 ~= 125
 id mismatch in the DNS reply: 120 ~= 125
 id mismatch in the DNS reply: 127 ~= 125
+--- log_level: debug
+
+
+
+=== TEST 24: TC (TrunCation) = 1, with TCP server
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} },
+                retrans = 3,
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r:set_timeout(20)   -- in ms
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    tc => 1,
+    qname => 'www.google.com',
+}
+--- tcp_listen: 1953
+--- tcp_reply dns=tcp
+{
+    id => 125,
+    opcode => 0,
+    qname => 'www.google.com',
+    answer => [
+        { name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 },
+        { name => "l.www.google.com", ipv6 => "::1", ttl => 0 },
+    ],
+}
+--- request
+GET /t
+--- response_body
+records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456},{"address":"0:0:0:0:0:0:0:1","type":28,"class":1,"name":"l.www.google.com","ttl":0}]
+--- no_error_log
+[error]
+--- error_log
+query the TCP server due to reply truncation
+--- log_level: debug
+
+
+
+=== TEST 25: one byte reply, truncated, with TCP server
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply: a
+--- tcp_listen: 1953
+--- tcp_reply dns=tcp
+{
+    id => 125,
+    opcode => 0,
+    qname => 'www.google.com',
+    answer => [
+        { name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 },
+        { name => "l.www.google.com", ipv6 => "::1", ttl => 0 },
+    ],
+}
+--- request
+GET /t
+--- response_body
+records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456},{"address":"0:0:0:0:0:0:0:1","type":28,"class":1,"name":"l.www.google.com","ttl":0}]
+--- no_error_log
+[error]
+--- error_log
+query the TCP server due to reply truncation
 --- log_level: debug
 
