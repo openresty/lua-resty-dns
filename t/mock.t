@@ -426,14 +426,14 @@ failed to query: bad AAAA record value length: 21
 
             local r, err = resolver:new{
                 nameservers = { {"127.0.0.1", 1953} },
-                retrans = 4,
+                retrans = 1,
             }
             if not r then
                 ngx.say("failed to instantiate resolver: ", err)
                 return
             end
 
-            r:set_timeout(10)   -- in ms
+            r:set_timeout(100)   -- in ms
 
             r._id = 125
 
@@ -448,7 +448,7 @@ failed to query: bad AAAA record value length: 21
         ';
     }
 --- udp_listen: 1953
---- udp_reply_delay: 50ms
+--- udp_reply_delay: 200ms
 --- udp_reply dns
 {
     id => 125,
@@ -477,14 +477,14 @@ lua udp socket read timed out
 
             local r, err = resolver:new{
                 nameservers = { {"127.0.0.1", 1953} },
-                -- retrans = 4,
+                retrans = 3,
             }
             if not r then
                 ngx.say("failed to instantiate resolver: ", err)
                 return
             end
 
-            r:set_timeout(20)   -- in ms
+            r:set_timeout(200)   -- in ms
 
             r._id = 125
 
@@ -499,7 +499,7 @@ lua udp socket read timed out
         ';
     }
 --- udp_listen: 1953
---- udp_reply_delay: 50ms
+--- udp_reply_delay: 500ms
 --- udp_reply dns
 {
     id => 125,
@@ -528,14 +528,14 @@ lua udp socket read timed out
 
             local r, err = resolver:new{
                 nameservers = { {"127.0.0.1", 1953} },
-                retrans = 3,
+                retrans = 2,
             }
             if not r then
                 ngx.say("failed to instantiate resolver: ", err)
                 return
             end
 
-            r:set_timeout(20)   -- in ms
+            r:set_timeout(200)   -- in ms
 
             r._id = 125
 
@@ -550,7 +550,7 @@ lua udp socket read timed out
         ';
     }
 --- udp_listen: 1953
---- udp_reply_delay: 50ms
+--- udp_reply_delay: 500ms
 --- udp_reply dns
 {
     id => 125,
@@ -563,7 +563,7 @@ lua udp socket read timed out
 --- request
 GET /t
 --- response_body
-records: [{"address":"ff01:0:0:0:0:0:0:101","type":28,"class":1,"name":"l.www.google.com","ttl":0}]
+failed to query: failed to receive reply from UDP server 127.0.0.1:1953: timeout
 --- error_log
 lua udp socket read timed out
 --- timeout: 3
