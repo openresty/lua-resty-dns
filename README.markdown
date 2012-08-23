@@ -109,6 +109,9 @@ This method also takes an optional `options` argument table, which takes the fol
 * `qtype`
 	The type of the question. Possible values are `1` (`TYPE_A`), `5` (`TYPE_CNAME`), `28` (`TYPE_AAAA`), or any other QTYPE value specified by RFC 1035 and RFC 3596. Default to `1` (`TYPE_A`).
 
+When data truncation happens, the resolver will automatically retry using the TCP transport mode
+to query the current nameserver.
+
 set_timeout
 -----------
 `syntax: r:set_timeout(time)`
@@ -176,7 +179,6 @@ each request.
 TODO
 ====
 
-* TCP transport mode
 * Concurrent (or parallel) query mode
 * Better support for other resource record types like `NS`, `PTR`, and `TXT`.
 * Support for the DNS inverse queries
