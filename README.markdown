@@ -98,11 +98,17 @@ which usually takes some of the following fields:
 * `address`
 	The IPv4 or IPv6 address in their textual representations when the resource record type is either `1` (`TYPE_A`) or `28` (`TYPE_AAAA`), respectively. Secussesive 16-bit zero groups in IPv6 addresses will not be compressed by default, if you want that, you need to call the `compress_ipv6_addr` static method instead.
 * `cname`
-	The (decoded) record data value for `CNAME` resource records.
+	The (decoded) record data value for `CNAME` resource records. Only present for `CNAME` records.
 * `ttl`
 	The time-to-live (TTL) value in seconds for the current resource record.
 * `class`
 	The current resource record class, possible values are `1` (`CLASS_IN`) or any other values allowed by RFC 1035.
+* `preference`
+	The preference integer number for `MX` resource records. Only present for `MX` records.
+* `exchange`
+	The exchange domain name for `MX` resource records. Only present for `MX` records.
+* `rdata`
+	The raw resource data (RDATA) for resource records that are not recognized.
 
 This method also takes an optional `options` argument table, which takes the following fields:
 
