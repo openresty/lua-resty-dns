@@ -6,7 +6,7 @@ use Cwd qw(cwd);
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks() + 8);
+plan tests => repeat_each() * (3 * blocks() + 10);
 
 my $pwd = cwd();
 
@@ -1150,6 +1150,7 @@ id mismatch in the DNS reply: 127 ~= 125
     qname => 'www.google.com',
 }
 --- tcp_listen: 1953
+--- tcp_query_len: 34
 --- tcp_reply dns=tcp
 {
     id => 125,
@@ -1202,6 +1203,7 @@ query the TCP server due to reply truncation
 --- udp_listen: 1953
 --- udp_reply: a
 --- tcp_listen: 1953
+--- tcp_query_len: 34
 --- tcp_reply dns=tcp
 {
     id => 125,
