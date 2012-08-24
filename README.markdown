@@ -222,7 +222,7 @@ TODO
 ====
 
 * Concurrent (or parallel) query mode
-* Better support for other resource record types like `NS`, `PTR`, and `TXT`.
+* Better support for other resource record types like `PTR`, and `TXT`.
 * Support for the DNS inverse queries
 
 Author
