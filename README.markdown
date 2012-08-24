@@ -104,9 +104,11 @@ which usually takes some of the following fields:
 * `class`
 	The current resource record class, possible values are `1` (`CLASS_IN`) or any other values allowed by RFC 1035.
 * `preference`
-	The preference integer number for `MX` resource records. Only present for `MX` records.
+	The preference integer number for `MX` resource records. Only present for `MX` type records.
 * `exchange`
-	The exchange domain name for `MX` resource records. Only present for `MX` records.
+	The exchange domain name for `MX` resource records. Only present for `MX` type records.
+* `nsdname`
+	A domain-name which specifies a host which should be authoritative for the specified class and domain. Usually present for `NS` type records.
 * `rdata`
 	The raw resource data (RDATA) for resource records that are not recognized.
 
@@ -184,6 +186,11 @@ TYPE_MX
 -------
 
 The `MX` resource record type, equal to the decimal number `15`.
+
+TYPE_NS
+-------
+
+The `NS` resource record type, equal to the decimal number `2`.
 
 TYPE_AAAA
 ---------

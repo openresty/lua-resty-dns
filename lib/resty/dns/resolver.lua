@@ -32,6 +32,7 @@ local DEBUG = ngx.DEBUG
 
 
 TYPE_A      = 1
+TYPE_NS     = 2
 TYPE_CNAME  = 5
 TYPE_MX     = 15
 TYPE_AAAA   = 28
@@ -420,8 +421,7 @@ local function parse_response(buf, id)
 
         elseif typ == TYPE_CNAME then
 
-            local cname, p
-            cname, p = decode_name(buf, pos)
+            local cname, p = decode_name(buf, pos)
             if not cname then
                 return nil, pos
             end
@@ -490,6 +490,24 @@ local function parse_response(buf, id)
             ans.exchange = host
 
             pos = p
+
+        elseif typ == TYPE_NS then
+
+            local name, p = decode_name(buf, pos)
+            if not name then
+                return nil, pos
+            end
+
+            if p - pos ~= len then
+                return nil, format("bad cname record length: %d ~= %d",
+                                   p - pos, len)
+            end
+
+            pos = p
+
+            -- print("name: ", name)
+
+            ans.nsdname = name
 
         else
             -- for unknown types, just forward the raw value
