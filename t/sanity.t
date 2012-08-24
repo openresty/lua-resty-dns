@@ -306,3 +306,35 @@ GET /t
 --- no_error_log
 [error]
 
+
+
+=== TEST 10: PTR query
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            local ans, err = r:query("4.4.8.8.in-addr.arpa", { qtype = r.TYPE_PTR })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- request
+GET /t
+--- response_body_like chop
+^records: \[\{.*?"ptrdname":"google-public-dns-b\.google\.com".*?\}\]$
+--- no_error_log
+[error]
+

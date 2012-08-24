@@ -113,6 +113,8 @@ which usually takes some of the following fields:
 	The raw resource data (RDATA) for resource records that are not recognized.
 * `txt`
 	The record value for `TXT` records.
+* `ptrdname`
+	The record value for `PTR` records.
 
 This method also takes an optional `options` argument table, which takes the following fields:
 
@@ -179,20 +181,25 @@ TYPE_A
 
 The `A` resource record type, equal to the decimal number `1`.
 
+TYPE_NS
+-------
+
+The `NS` resource record type, equal to the decimal number `2`.
+
 TYPE_CNAME
 ----------
 
 The `CNAME` resource record type, equal to the decimal number `5`.
 
+TYPE_PTR
+--------
+
+The `PTR` resource record type, equal to the decimal number `12`.
+
 TYPE_MX
 -------
 
 The `MX` resource record type, equal to the decimal number `15`.
-
-TYPE_NS
--------
-
-The `NS` resource record type, equal to the decimal number `2`.
 
 TYPE_TXT
 --------
@@ -229,8 +236,7 @@ TODO
 ====
 
 * Concurrent (or parallel) query mode
-* Better support for other resource record types like `PTR`.
-* Support for the DNS inverse queries
+* Better support for other resource record types like `SPF`.
 
 Author
 ======

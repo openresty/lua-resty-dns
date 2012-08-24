@@ -34,6 +34,7 @@ local DEBUG = ngx.DEBUG
 TYPE_A      = 1
 TYPE_NS     = 2
 TYPE_CNAME  = 5
+TYPE_PTR    = 12
 TYPE_MX     = 15
 TYPE_TXT    = 16
 TYPE_AAAA   = 28
@@ -514,6 +515,24 @@ local function parse_response(buf, id)
 
             ans.txt = substr(buf, pos, pos + len - 1)
             pos = pos + len
+
+        elseif typ == TYPE_PTR then
+
+            local name, p = decode_name(buf, pos)
+            if not name then
+                return nil, pos
+            end
+
+            if p - pos ~= len then
+                return nil, format("bad cname record length: %d ~= %d",
+                                   p - pos, len)
+            end
+
+            pos = p
+
+            -- print("name: ", name)
+
+            ans.ptrdname = name
 
         else
             -- for unknown types, just forward the raw value
