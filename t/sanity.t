@@ -242,3 +242,67 @@ GET /t
 --- no_error_log
 [error]
 
+
+
+=== TEST 8: TXT query (no ans)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            local ans, err = r:query("agentzh.org", { qtype = r.TYPE_TXT })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- request
+GET /t
+--- response_body
+records: {}
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: TXT query (with ans)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            local ans, err = r:query("gmail.com", { qtype = r.TYPE_TXT })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- request
+GET /t
+--- response_body_like chop
+^records: \[\{.*?"txt":"[^"]+".*?\}\]$
+--- no_error_log
+[error]
+

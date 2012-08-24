@@ -111,6 +111,8 @@ which usually takes some of the following fields:
 	A domain-name which specifies a host which should be authoritative for the specified class and domain. Usually present for `NS` type records.
 * `rdata`
 	The raw resource data (RDATA) for resource records that are not recognized.
+* `txt`
+	The record value for `TXT` records.
 
 This method also takes an optional `options` argument table, which takes the following fields:
 
@@ -192,6 +194,11 @@ TYPE_NS
 
 The `NS` resource record type, equal to the decimal number `2`.
 
+TYPE_TXT
+--------
+
+The `TXT` resource record type, equal to the decimal number `16`.
+
 TYPE_AAAA
 ---------
 `syntax: typ = r.TYPE_AAAA`
@@ -222,7 +229,7 @@ TODO
 ====
 
 * Concurrent (or parallel) query mode
-* Better support for other resource record types like `PTR`, and `TXT`.
+* Better support for other resource record types like `PTR`.
 * Support for the DNS inverse queries
 
 Author

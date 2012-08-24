@@ -35,6 +35,7 @@ TYPE_A      = 1
 TYPE_NS     = 2
 TYPE_CNAME  = 5
 TYPE_MX     = 15
+TYPE_TXT    = 16
 TYPE_AAAA   = 28
 
 CLASS_IN    = 1
@@ -508,6 +509,11 @@ local function parse_response(buf, id)
             -- print("name: ", name)
 
             ans.nsdname = name
+
+        elseif typ == TYPE_TXT then
+
+            ans.txt = substr(buf, pos, pos + len - 1)
+            pos = pos + len
 
         else
             -- for unknown types, just forward the raw value
