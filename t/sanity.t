@@ -67,7 +67,7 @@ GET /t
                 return
             end
 
-            local ans, err = r:query("www.google.com", { qtype = r.TYPE_CNAME })
+            local ans, err = r:query("www.yahoo.com", { qtype = r.TYPE_CNAME })
             if not ans then
                 ngx.say("failed to query: ", err)
                 return
