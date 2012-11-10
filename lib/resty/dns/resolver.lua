@@ -1,16 +1,8 @@
 -- Copyright (C) 2012 Zhang "agentzh" Yichun (章亦春)
 
-module("resty.dns.resolver", package.seeall)
-
-
-_VERSION = '0.08'
-
-
-local bit = require "bit"
-
 
 -- local socket = require "socket"
-local class = resty.dns.resolver
+local bit = require "bit"
 local udp = ngx.socket.udp
 local rand = math.random
 local char = string.char
@@ -29,17 +21,27 @@ local re_sub = ngx.re.sub
 local tcp = ngx.socket.tcp
 local log = ngx.log
 local DEBUG = ngx.DEBUG
+local randomseed = math.randomseed
+local ngx_time = ngx.time
+local setmetatable = setmetatable
+local type = type
 
 
-TYPE_A      = 1
-TYPE_NS     = 2
-TYPE_CNAME  = 5
-TYPE_PTR    = 12
-TYPE_MX     = 15
-TYPE_TXT    = 16
-TYPE_AAAA   = 28
+module(...)
 
-CLASS_IN    = 1
+
+_VERSION = '0.08'
+
+
+local TYPE_A      = 1
+local TYPE_NS     = 2
+local TYPE_CNAME  = 5
+local TYPE_PTR    = 12
+local TYPE_MX     = 15
+local TYPE_TXT    = 16
+local TYPE_AAAA   = 28
+
+local CLASS_IN    = 1
 
 
 local resolver_errstrs = {
@@ -50,7 +52,7 @@ local resolver_errstrs = {
     "refused",          -- 5
 }
 
-local mt = { __index = class }
+local mt = { __index = _M }
 
 
 function new(class, opts)
@@ -127,7 +129,7 @@ local function pick_sock(self, socks)
 end
 
 
-local function get_cur_server(self)
+local function _get_cur_server(self)
     local cur = self.cur
 
     local servers = self.servers
@@ -160,12 +162,12 @@ function set_timeout(self, timeout)
 end
 
 
-local function encode_name(s)
+local function _encode_name(s)
     return char(strlen(s)) .. s
 end
 
 
-local function decode_name(buf, pos)
+local function _decode_name(buf, pos)
     local labels = {}
     local nptrs = 0
     local p = pos
@@ -221,7 +223,7 @@ local function decode_name(buf, pos)
 end
 
 
-local function build_request(qname, id, no_recurse, opts)
+local function _build_request(qname, id, no_recurse, opts)
     local qtype
 
     if opts then
@@ -237,7 +239,7 @@ local function build_request(qname, id, no_recurse, opts)
 
     local flags
     if no_recurse then
-        print("found no recurse")
+        -- print("found no recurse")
         flags = "\0\0"
     else
         flags = "\1\0"
@@ -250,7 +252,7 @@ local function build_request(qname, id, no_recurse, opts)
     local typ = "\0" .. char(qtype)
     local class = "\0\1"    -- the Internet class
 
-    local name = gsub(qname, "([^.]+)%.?", encode_name) .. '\0'
+    local name = gsub(qname, "([^.]+)%.?", _encode_name) .. '\0'
 
     return {
         ident_hi, ident_lo, flags, nqs, nan, nns, nar,
@@ -320,7 +322,7 @@ local function parse_response(buf, id)
 
     -- skip the question part
 
-    local ans_qname, pos = decode_name(buf, 13)
+    local ans_qname, pos = _decode_name(buf, 13)
     if not ans_qname then
         return nil, pos
     end
@@ -363,7 +365,7 @@ local function parse_response(buf, id)
         insert(answers, ans)
 
         local name
-        name, pos = decode_name(buf, pos)
+        name, pos = _decode_name(buf, pos)
         if not name then
             return nil, pos
         end
@@ -423,7 +425,7 @@ local function parse_response(buf, id)
 
         elseif typ == TYPE_CNAME then
 
-            local cname, p = decode_name(buf, pos)
+            local cname, p = _decode_name(buf, pos)
             if not cname then
                 return nil, pos
             end
@@ -479,7 +481,7 @@ local function parse_response(buf, id)
 
             ans.preference = lshift(pref_hi, 8) + pref_lo
 
-            local host, p = decode_name(buf, pos + 2)
+            local host, p = _decode_name(buf, pos + 2)
             if not host then
                 return nil, pos
             end
@@ -495,7 +497,7 @@ local function parse_response(buf, id)
 
         elseif typ == TYPE_NS then
 
-            local name, p = decode_name(buf, pos)
+            local name, p = _decode_name(buf, pos)
             if not name then
                 return nil, pos
             end
@@ -518,7 +520,7 @@ local function parse_response(buf, id)
 
         elseif typ == TYPE_PTR then
 
-            local name, p = decode_name(buf, pos)
+            local name, p = _decode_name(buf, pos)
             if not name then
                 return nil, pos
             end
@@ -546,7 +548,7 @@ local function parse_response(buf, id)
 end
 
 
-local function gen_id(self)
+local function _gen_id(self)
     local id = self._id   -- for regression testing
     if id then
         return id
@@ -563,7 +565,7 @@ local function _tcp_query(self, query, id)
 
     log(DEBUG, "query the TCP server due to reply truncation")
 
-    local server = get_cur_server(self)
+    local server = _get_cur_server(self)
 
     local ok, err = sock:connect(server[1], server[2])
     if not ok then
@@ -621,9 +623,9 @@ function tcp_query(self, qname, opts)
 
     pick_sock(self, socks)
 
-    local id = gen_id(self)
+    local id = _gen_id(self)
 
-    local query = build_request(qname, id, self.no_recurse, opts)
+    local query = _build_request(qname, id, self.no_recurse, opts)
 
     return _tcp_query(self, query, id)
 end
@@ -635,9 +637,9 @@ function query(self, qname, opts)
         return nil, nil, "not initialized"
     end
 
-    local id = gen_id(self)
+    local id = _gen_id(self)
 
-    local query = build_request(qname, id, self.no_recurse, opts)
+    local query = _build_request(qname, id, self.no_recurse, opts)
 
     -- local cjson = require "cjson"
     -- print("query: ", cjson.encode(concat(query, "")))
@@ -651,7 +653,7 @@ function query(self, qname, opts)
 
         local ok, err = sock:send(query)
         if not ok then
-            local server = get_cur_server(self)
+            local server = _get_cur_server(self)
             return nil, "failed to send request to UDP server "
                 .. concat(server, ":") .. ": " .. err
         end
@@ -685,7 +687,7 @@ function query(self, qname, opts)
         end
 
         if err ~= "timeout" or i == retrans then
-            local server = get_cur_server(self)
+            local server = _get_cur_server(self)
             return nil, "failed to receive reply from UDP server "
                 .. concat(server, ":") .. ": " .. err
         end
@@ -705,12 +707,26 @@ function compress_ipv6_addr(addr)
 end
 
 
-math.randomseed(ngx.time())
+randomseed(ngx_time())
 
 
--- to prevent use of casual module global variables
-getmetatable(class).__newindex = function (table, key, val)
-    error('attempt to write to undeclared variable "' .. key .. '": '
-            .. debug.traceback())
-end
+_M.TYPE_A      = TYPE_A
+_M.TYPE_NS     = TYPE_NS
+_M.TYPE_CNAME  = TYPE_CNAME
+_M.TYPE_PTR    = TYPE_PTR
+_M.TYPE_MX     = TYPE_MX
+_M.TYPE_TXT    = TYPE_TXT
+_M.TYPE_AAAA   = TYPE_AAAA
+
+_M.CLASS_IN    = CLASS_IN
+
+
+local class_mt = {
+    -- to prevent use of casual module global variables
+    __newindex = function (table, key, val)
+        error('attempt to write to undeclared variable "' .. key .. '"')
+    end
+}
+
+setmetatable(_M, class_mt)
 
