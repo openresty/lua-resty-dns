@@ -30,7 +30,7 @@ local type = type
 module(...)
 
 
-_VERSION = '0.08'
+_VERSION = '0.09'
 
 
 local TYPE_A      = 1
