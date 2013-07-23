@@ -299,11 +299,6 @@ local function parse_response(buf, id)
 
     -- print(format("code: %d", code))
 
-    if code ~= 0 then
-        return nil, format("server returned code %d: %s", code,
-                           resolver_errstrs[code] or "unknown")
-    end
-
     local nqs_hi = byte(buf, 5)
     local nqs_lo = byte(buf, 6)
     local nqs = lshift(nqs_hi, 8) + nqs_lo
@@ -357,6 +352,11 @@ local function parse_response(buf, id)
     pos = pos + 4
 
     local answers = {}
+
+    if code ~= 0 then
+        answers.errcode = code
+        answers.errstr = resolver_errstrs[code] or "unknown"
+    end
 
     for i = 1, nan do
         -- print(format("ans %d: qtype:%d qclass:%d", i, qtype, qclass))

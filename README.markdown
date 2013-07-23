@@ -50,8 +50,12 @@ Synopsis
                     return
                 end
 
-                for i = 1, #answers do
-                    local ans = answers[i]
+                if answers.errcode then
+                    ngx.say("server returned error code: ", answers.errcode,
+                            ": ", answers.errstr)
+                end
+
+                for i, ans in ipairs(answers) do
                     ngx.say(ans.name, " ", ans.address or ans.cname,
                             " type:", ans.type, " class:", ans.class,
                             " ttl:", ans.ttl)
@@ -87,6 +91,8 @@ query
 Performs a DNS standard query to the nameservers specified by the `new` method,
 and returns all the answer records in an array-like Lua table. In case of errors, it will
 return `nil` and a string describing the error instead.
+
+If the server returns a non-zero error code, the fields `errcode` and `errstr` will be set accordingly in the Lua table returned.
 
 Each entry in the `answers` returned table value is also a hash-like Lua table
 which usually takes some of the following fields:

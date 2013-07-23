@@ -611,7 +611,7 @@ lua udp socket read timed out
 --- request
 GET /t
 --- response_body
-failed to query: server returned code 1: format error
+records: {"errcode":1,"errstr":"format error"}
 --- no_error_log
 [error]
 
@@ -644,7 +644,14 @@ failed to query: server returned code 1: format error
             end
 
             local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+
+            if ans.errcode then
+                ngx.say("error code: ", ans.errcode, ": ", ans.errstr)
+            end
+
+            for i, rec in ipairs(ans) do
+                ngx.say("record: ", cjson.encode(rec))
+            end
         ';
     }
 --- udp_listen: 1953
@@ -654,11 +661,13 @@ failed to query: server returned code 1: format error
     rcode => 2,
     opcode => 0,
     qname => 'www.google.com',
+    answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 }],
 }
 --- request
 GET /t
 --- response_body
-failed to query: server returned code 2: server failure
+error code: 2: server failure
+record: {"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456}
 --- no_error_log
 [error]
 
@@ -705,7 +714,7 @@ failed to query: server returned code 2: server failure
 --- request
 GET /t
 --- response_body
-failed to query: server returned code 3: name error
+records: {"errcode":3,"errstr":"name error"}
 --- no_error_log
 [error]
 
@@ -752,7 +761,7 @@ failed to query: server returned code 3: name error
 --- request
 GET /t
 --- response_body
-failed to query: server returned code 4: not implemented
+records: {"errcode":4,"errstr":"not implemented"}
 --- no_error_log
 [error]
 
@@ -799,7 +808,7 @@ failed to query: server returned code 4: not implemented
 --- request
 GET /t
 --- response_body
-failed to query: server returned code 5: refused
+records: {"errcode":5,"errstr":"refused"}
 --- no_error_log
 [error]
 
@@ -846,7 +855,7 @@ failed to query: server returned code 5: refused
 --- request
 GET /t
 --- response_body
-failed to query: server returned code 6: unknown
+records: {"errcode":6,"errstr":"unknown"}
 --- no_error_log
 [error]
 
