@@ -6,9 +6,7 @@ lua-resty-dns - Lua DNS resolver for the ngx_lua based on the cosocket API
 Status
 ======
 
-This library is already usable but is still considered experimental.
-
-The API is still in flux and will change without notice.
+This library is considered production ready.
 
 Description
 ===========
@@ -23,6 +21,8 @@ This Lua library takes advantage of ngx_lua's cosocket API, which ensures
 Note that at least [ngx_lua 0.5.12](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.2.1.11](http://openresty.org/#Download) is required.
 
 Also, the [bit library](http://bitop.luajit.org/) is also required. If you're using LuaJIT 2.0 with ngx_lua, then the `bit` library is already available by default.
+
+Note that, this library is bundled and enabled by default in the [ngx_openresty bundle](http://openresty.org/).
 
 Synopsis
 ========
@@ -247,14 +247,14 @@ TODO
 Author
 ======
 
-Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>
+Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 
 Copyright and License
 =====================
 
 This module is licensed under the BSD license.
 
-Copyright (C) 2012, by Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>.
+Copyright (C) 2012-2013, by Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 
 All rights reserved.
 
