@@ -11,7 +11,7 @@ This library is considered production ready.
 Description
 ===========
 
-This Lua library provies a DSN resolver for the ngx_lua nginx module:
+This Lua library provies a DNS resolver for the ngx_lua nginx module:
 
 http://wiki.nginx.org/HttpLuaModule
 
