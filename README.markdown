@@ -224,6 +224,15 @@ CLASS_IN
 
 The `Internet` resource record type, equal to the decimal number `1`.
 
+Automatic Error Logging
+=======================
+
+By default the underlying [ngx_lua](http://wiki.nginx.org/HttpLuaModule) module
+does error logging when socket errors happen. If you are already doing proper error
+handling in your own Lua code, then you are recommended to disable this automatic error logging by turning off [ngx_lua](http://wiki.nginx.org/HttpLuaModule)'s [lua_socket_log_errors](http://wiki.nginx.org/HttpLuaModule#lua_socket_log_errors) directive, that is,
+
+    lua_socket_log_errors off;
+
 Limitations
 ===========
 
