@@ -497,6 +497,10 @@ local function parse_response(buf, id)
             pos = p
 
         elseif typ == TYPE_SRV then
+            if len < 7 then
+                return nil, "bad SRV record value length: " .. len
+            end
+
             local prio_hi = byte(buf, pos)
             local prio_lo = byte(buf, pos + 1)
             ans.priority = lshift(prio_hi, 8) + prio_lo
@@ -511,12 +515,17 @@ local function parse_response(buf, id)
 
             local name, p = _decode_name(buf, pos + 6)
             if not name then
-                return nil, pos + 6
+                return nil, pos
             end
 
-            pos = p
+            if p - pos ~= len then
+                return nil, format("bad srv record length: %d ~= %d",
+                                   p - pos, len)
+            end
 
             ans.srvdname = name
+
+            pos = p
 
         elseif typ == TYPE_NS then
 
