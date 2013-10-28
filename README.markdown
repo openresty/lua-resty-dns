@@ -27,6 +27,7 @@ Note that, this library is bundled and enabled by default in the [ngx_openresty 
 Synopsis
 ========
 
+```lua
     lua_package_path "/path/to/lua-resty-dns/lib/?.lua;;";
 
     server {
@@ -63,6 +64,7 @@ Synopsis
             ';
         }
     }
+```
 
 Methods
 =======
@@ -140,6 +142,7 @@ All TCP connections are short lived.
 
 Here is an example:
 
+```lua
     local resolver = require "resty.dns.resolver"
 
     local r, err = resolver:new{
@@ -158,6 +161,7 @@ Here is an example:
 
     local cjson = require "cjson"
     ngx.say("records: ", cjson.encode(ans))
+```
 
 set_timeout
 -----------
@@ -173,9 +177,11 @@ Compresses the successive 16-bit zero groups in the textual format of the IPv6 a
 
 For example,
 
+```lua
     local resolver = require "resty.dns.resolver"
     local compress = resolver.compress_ipv6_addr
     local new_addr = compress("FF01:0:0:0:0:0:0:101")
+```
 
 will yield `FF01::101` in the `new_addr` return value.
 
@@ -231,7 +237,9 @@ By default the underlying [ngx_lua](http://wiki.nginx.org/HttpLuaModule) module
 does error logging when socket errors happen. If you are already doing proper error
 handling in your own Lua code, then you are recommended to disable this automatic error logging by turning off [ngx_lua](http://wiki.nginx.org/HttpLuaModule)'s [lua_socket_log_errors](http://wiki.nginx.org/HttpLuaModule#lua_socket_log_errors) directive, that is,
 
+```nginx
     lua_socket_log_errors off;
+```
 
 Limitations
 ===========
