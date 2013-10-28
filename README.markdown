@@ -3,6 +3,35 @@ Name
 
 lua-resty-dns - Lua DNS resolver for the ngx_lua based on the cosocket API
 
+Table of Contents
+=================
+
+* [Name](#name)
+* [Status](#status)
+* [Description](#description)
+* [Synopsis](#synopsis)
+* [Methods](#methods)
+    * [new](#new)
+    * [query](#query)
+    * [tcp_query](#tcp_query)
+    * [set_timeout](#set_timeout)
+    * [compress_ipv6_addr](#compress_ipv6_addr)
+* [Constants](#constants)
+    * [TYPE_A](#type_a)
+    * [TYPE_NS](#type_ns)
+    * [TYPE_CNAME](#type_cname)
+    * [TYPE_PTR](#type_ptr)
+    * [TYPE_MX](#type_mx)
+    * [TYPE_TXT](#type_txt)
+    * [TYPE_AAAA](#type_aaaa)
+    * [CLASS_IN](#class_in)
+* [Automatic Error Logging](#automatic-error-logging)
+* [Limitations](#limitations)
+* [TODO](#todo)
+* [Author](#author)
+* [Copyright and License](#copyright-and-license)
+* [See Also](#see-also)
+
 Status
 ======
 
@@ -66,8 +95,12 @@ Synopsis
     }
 ```
 
+[Back to TOC](#table-of-contents)
+
 Methods
 =======
+
+[Back to TOC](#table-of-contents)
 
 new
 ---
@@ -85,6 +118,8 @@ It accepts a `opts` table argument. The following options are supported:
 	the time in milliseconds for waiting for the respond for a single attempt of request transmition. note that this is ''not'' the maximal total waiting time before giving up, the maximal total waiting time can be calculated by the expression `timeout x retrans`. The `timeout` setting can also be changed by calling the `set_timeout` method. The default `timeout` setting is 2000 milliseconds, or 2 seconds.
 * `no_recurse`
 	a boolean flag controls whether to disable the "recursion desired" (RD) flag in the UDP request. Default to `false`.
+
+[Back to TOC](#table-of-contents)
 
 query
 -----
@@ -132,6 +167,8 @@ This method also takes an optional `options` argument table, which takes the fol
 When data truncation happens, the resolver will automatically retry using the TCP transport mode
 to query the current nameserver. All TCP connections are short lived.
 
+[Back to TOC](#table-of-contents)
+
 tcp_query
 ---------
 `syntax: answers, err = r:tcp_query(name, options?)`
@@ -163,11 +200,15 @@ Here is an example:
     ngx.say("records: ", cjson.encode(ans))
 ```
 
+[Back to TOC](#table-of-contents)
+
 set_timeout
 -----------
 `syntax: r:set_timeout(time)`
 
 Overrides the current `timeout` setting by the `time` argument in milliseconds for all the nameserver peers.
+
+[Back to TOC](#table-of-contents)
 
 compress_ipv6_addr
 ------------------
@@ -185,38 +226,54 @@ For example,
 
 will yield `FF01::101` in the `new_addr` return value.
 
+[Back to TOC](#table-of-contents)
+
 Constants
 =========
+
+[Back to TOC](#table-of-contents)
 
 TYPE_A
 ------
 
 The `A` resource record type, equal to the decimal number `1`.
 
+[Back to TOC](#table-of-contents)
+
 TYPE_NS
 -------
 
 The `NS` resource record type, equal to the decimal number `2`.
+
+[Back to TOC](#table-of-contents)
 
 TYPE_CNAME
 ----------
 
 The `CNAME` resource record type, equal to the decimal number `5`.
 
+[Back to TOC](#table-of-contents)
+
 TYPE_PTR
 --------
 
 The `PTR` resource record type, equal to the decimal number `12`.
+
+[Back to TOC](#table-of-contents)
 
 TYPE_MX
 -------
 
 The `MX` resource record type, equal to the decimal number `15`.
 
+[Back to TOC](#table-of-contents)
+
 TYPE_TXT
 --------
 
 The `TXT` resource record type, equal to the decimal number `16`.
+
+[Back to TOC](#table-of-contents)
 
 TYPE_AAAA
 ---------
@@ -224,11 +281,15 @@ TYPE_AAAA
 
 The `AAAA` resource record type, equal to the decimal number `28`.
 
+[Back to TOC](#table-of-contents)
+
 CLASS_IN
 --------
 `syntax: class = r.CLASS_IN`
 
 The `Internet` resource record type, equal to the decimal number `1`.
+
+[Back to TOC](#table-of-contents)
 
 Automatic Error Logging
 =======================
@@ -240,6 +301,8 @@ handling in your own Lua code, then you are recommended to disable this automati
 ```nginx
     lua_socket_log_errors off;
 ```
+
+[Back to TOC](#table-of-contents)
 
 Limitations
 ===========
@@ -255,16 +318,22 @@ You should always initiate `resty.dns.resolver` objects in function local
 variables or in the `ngx.ctx` table. These places all have their own data copies for
 each request.
 
+[Back to TOC](#table-of-contents)
+
 TODO
 ====
 
 * Concurrent (or parallel) query mode
 * Better support for other resource record types like `SPF`.
 
+[Back to TOC](#table-of-contents)
+
 Author
 ======
 
 Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
+
+[Back to TOC](#table-of-contents)
 
 Copyright and License
 =====================
@@ -283,10 +352,14 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+[Back to TOC](#table-of-contents)
+
 See Also
 ========
 * the ngx_lua module: http://wiki.nginx.org/HttpLuaModule
 * the [lua-resty-memcached](https://github.com/agentzh/lua-resty-memcached) library.
 * the [lua-resty-redis](https://github.com/agentzh/lua-resty-redis) library.
 * the [lua-resty-mysql](https://github.com/agentzh/lua-resty-mysql) library.
+
+[Back to TOC](#table-of-contents)
 
