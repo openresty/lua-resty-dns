@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use 5.010001;
-use Test::Nginx::Socket -Base;
+use Test::Nginx::Socket::Lua -Base;
 #use JSON::XS;
 
 use constant {
