@@ -27,10 +27,7 @@ local setmetatable = setmetatable
 local type = type
 
 
-module(...)
-
-
-_VERSION = '0.09'
+local DOT_CHAR = byte(".")
 
 
 local TYPE_A      = 1
@@ -44,6 +41,19 @@ local TYPE_AAAA   = 28
 local CLASS_IN    = 1
 
 
+local _M = {
+    _VERSION    = '0.09',
+    TYPE_A      = TYPE_A,
+    TYPE_NS     = TYPE_NS,
+    TYPE_CNAME  = TYPE_CNAME,
+    TYPE_PTR    = TYPE_PTR,
+    TYPE_MX     = TYPE_MX,
+    TYPE_TXT    = TYPE_TXT,
+    TYPE_AAAA   = TYPE_AAAA,
+    CLASS_IN    = CLASS_IN,
+}
+
+
 local resolver_errstrs = {
     "format error",     -- 1
     "server failure",   -- 2
@@ -52,10 +62,11 @@ local resolver_errstrs = {
     "refused",          -- 5
 }
 
+
 local mt = { __index = _M }
 
 
-function new(class, opts)
+function _M.new(class, opts)
     if not opts then
         return nil, "no options table specified"
     end
@@ -142,7 +153,7 @@ local function _get_cur_server(self)
 end
 
 
-function set_timeout(self, timeout)
+function _M.set_timeout(self, timeout)
     local socks = self.socks
     if not socks then
         return nil, "not initialized"
@@ -251,6 +262,10 @@ local function _build_request(qname, id, no_recurse, opts)
     local nar = "\0\0"
     local typ = "\0" .. char(qtype)
     local class = "\0\1"    -- the Internet class
+
+    if byte(qname, 1) == DOT_CHAR then
+        return nil, "bad name"
+    end
 
     local name = gsub(qname, "([^.]+)%.?", _encode_name) .. '\0'
 
@@ -560,7 +575,7 @@ end
 local function _tcp_query(self, query, id)
     local sock = self.tcp_sock
     if not sock then
-        return "not initialized"
+        return nil, "not initialized"
     end
 
     log(DEBUG, "query the TCP server due to reply truncation")
@@ -615,31 +630,37 @@ local function _tcp_query(self, query, id)
 end
 
 
-function tcp_query(self, qname, opts)
+function _M.tcp_query(self, qname, opts)
     local socks = self.socks
     if not socks then
-        return nil, nil, "not initialized"
+        return nil, "not initialized"
     end
 
     pick_sock(self, socks)
 
     local id = _gen_id(self)
 
-    local query = _build_request(qname, id, self.no_recurse, opts)
+    local query, err = _build_request(qname, id, self.no_recurse, opts)
+    if not query then
+        return nil, err
+    end
 
     return _tcp_query(self, query, id)
 end
 
 
-function query(self, qname, opts)
+function _M.query(self, qname, opts)
     local socks = self.socks
     if not socks then
-        return nil, nil, "not initialized"
+        return nil, "not initialized"
     end
 
     local id = _gen_id(self)
 
-    local query = _build_request(qname, id, self.no_recurse, opts)
+    local query, err = _build_request(qname, id, self.no_recurse, opts)
+    if not query then
+        return nil, err
+    end
 
     -- local cjson = require "cjson"
     -- print("query: ", cjson.encode(concat(query, "")))
@@ -697,7 +718,7 @@ function query(self, qname, opts)
 end
 
 
-function compress_ipv6_addr(addr)
+function _M.compress_ipv6_addr(addr)
     local addr = re_sub(addr, "^(0:)+|(:0)+$|:(0:)+", "::", "jo")
     if addr == "::0" then
         addr = "::"
@@ -710,23 +731,4 @@ end
 randomseed(ngx_time())
 
 
-_M.TYPE_A      = TYPE_A
-_M.TYPE_NS     = TYPE_NS
-_M.TYPE_CNAME  = TYPE_CNAME
-_M.TYPE_PTR    = TYPE_PTR
-_M.TYPE_MX     = TYPE_MX
-_M.TYPE_TXT    = TYPE_TXT
-_M.TYPE_AAAA   = TYPE_AAAA
-
-_M.CLASS_IN    = CLASS_IN
-
-
-local class_mt = {
-    -- to prevent use of casual module global variables
-    __newindex = function (table, key, val)
-        error('attempt to write to undeclared variable "' .. key .. '"')
-    end
-}
-
-setmetatable(_M, class_mt)
-
+return _M
