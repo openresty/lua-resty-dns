@@ -273,6 +273,7 @@ GET /t
 records: {}
 --- no_error_log
 [error]
+--- timeout: 10
 
 
 
