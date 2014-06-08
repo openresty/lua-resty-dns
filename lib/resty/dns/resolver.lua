@@ -37,6 +37,7 @@ local TYPE_PTR    = 12
 local TYPE_MX     = 15
 local TYPE_TXT    = 16
 local TYPE_AAAA   = 28
+local TYPE_SRV    = 33
 
 local CLASS_IN    = 1
 
@@ -50,6 +51,7 @@ local _M = {
     TYPE_MX     = TYPE_MX,
     TYPE_TXT    = TYPE_TXT,
     TYPE_AAAA   = TYPE_AAAA,
+    TYPE_SRV    = TYPE_SRV,
     CLASS_IN    = CLASS_IN,
 }
 
@@ -507,6 +509,37 @@ local function parse_response(buf, id)
             end
 
             ans.exchange = host
+
+            pos = p
+
+        elseif typ == TYPE_SRV then
+            if len < 7 then
+                return nil, "bad SRV record value length: " .. len
+            end
+
+            local prio_hi = byte(buf, pos)
+            local prio_lo = byte(buf, pos + 1)
+            ans.priority = lshift(prio_hi, 8) + prio_lo
+
+            local weight_hi = byte(buf, pos + 2)
+            local weight_lo = byte(buf, pos + 3)
+            ans.weight = lshift(weight_hi, 8) + weight_lo
+
+            local port_hi = byte(buf, pos + 4)
+            local port_lo = byte(buf, pos + 5)
+            ans.port = lshift(port_hi, 8) + port_lo
+
+            local name, p = _decode_name(buf, pos + 6)
+            if not name then
+                return nil, pos
+            end
+
+            if p - pos ~= len then
+                return nil, format("bad srv record length: %d ~= %d",
+                                   p - pos, len)
+            end
+
+            ans.target = name
 
             pos = p
 

@@ -10,7 +10,7 @@ plan tests => repeat_each() * (3 * blocks());
 my $pwd = cwd();
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;;";
+    lua_package_path "$pwd/t/lib/?.lua;$pwd/lib/?.lua;;";
     lua_package_cpath "/usr/local/openresty-debug/lualib/?.so;/usr/local/openresty/lualib/?.so;;";
 };
 
@@ -399,6 +399,38 @@ GET /t
 GET /t
 --- response_body
 failed to query: bad name
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: SRV records or XMPP
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            local ans, err = r:query("_xmpp-client._tcp.jabber.org", { qtype = r.TYPE_SRV })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        ';
+    }
+--- request
+GET /t
+--- response_body_like chop
+^records: \[(?:{"class":1,"name":"_xmpp-client._tcp.jabber.org","port":\d+,"priority":\d+,"target":"[\w.]+\.jabber.org","ttl":\d+,"type":33,"weight":\d+},?)+\]$
 --- no_error_log
 [error]
 

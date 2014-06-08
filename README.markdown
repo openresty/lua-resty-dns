@@ -24,6 +24,7 @@ Table of Contents
     * [TYPE_MX](#type_mx)
     * [TYPE_TXT](#type_txt)
     * [TYPE_AAAA](#type_aaaa)
+    * [TYPE_SRV](#type_srv)
     * [CLASS_IN](#class_in)
 * [Automatic Error Logging](#automatic-error-logging)
 * [Limitations](#limitations)
@@ -297,6 +298,16 @@ TYPE_AAAA
 `syntax: typ = r.TYPE_AAAA`
 
 The `AAAA` resource record type, equal to the decimal number `28`.
+
+[Back to TOC](#table-of-contents)
+
+TYPE_SRV
+---------
+`syntax: typ = r.TYPE_SRV`
+
+The `SRV` resource record type, equal to the decimal number `33`.
+
+See RFC 2782 for details.
 
 [Back to TOC](#table-of-contents)
 
