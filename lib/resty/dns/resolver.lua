@@ -9,7 +9,7 @@ local char = string.char
 local byte = string.byte
 local find = string.find
 local gsub = string.gsub
-local substr = string.sub
+local sub = string.sub
 local format = string.format
 local band = bit.band
 local rshift = bit.rshift
@@ -218,7 +218,7 @@ local function _decode_name(buf, pos)
 
         else
             -- being a label
-            local label = substr(buf, p + 1, p + fst)
+            local label = sub(buf, p + 1, p + fst)
             insert(labels, label)
 
             -- print("resolved label ", label)
@@ -340,7 +340,7 @@ local function parse_response(buf, id)
 
     -- print("qname in reply: ", ans_qname)
 
-    -- print("question: ", substr(buf, 13, pos))
+    -- print("question: ", sub(buf, 13, pos))
 
     if pos + 3 + nan * 12 > n then
         -- print(format("%d > %d", pos + 3 + nan * 12, n))
@@ -570,7 +570,7 @@ local function parse_response(buf, id)
 
             -- print("slen: ", len)
 
-            local val = substr(buf, pos + 1, pos + slen)
+            local val = sub(buf, pos + 1, pos + slen)
             local last = pos + len
             pos = pos + slen + 1
 
@@ -589,7 +589,7 @@ local function parse_response(buf, id)
                         slen = last - pos - 1
                     end
 
-                    val[idx] = substr(buf, pos + 1, pos + slen)
+                    val[idx] = sub(buf, pos + 1, pos + slen)
                     idx = idx + 1
                     pos = pos + slen + 1
 
@@ -619,7 +619,7 @@ local function parse_response(buf, id)
         else
             -- for unknown types, just forward the raw value
 
-            ans.rdata = substr(buf, pos, pos + len - 1)
+            ans.rdata = sub(buf, pos, pos + len - 1)
             pos = pos + len
         end
     end
