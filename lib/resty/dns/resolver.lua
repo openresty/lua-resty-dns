@@ -422,7 +422,7 @@ local function parse_response(buf, id)
         local len_lo = byte(buf, pos + 9)
         local len = lshift(len_hi, 8) + len_lo
 
-        -- print("len: ", len)
+        -- print("record len: ", len)
 
         pos = pos + 10
 
@@ -563,8 +563,41 @@ local function parse_response(buf, id)
 
         elseif typ == TYPE_TXT then
 
-            ans.txt = substr(buf, pos, pos + len - 1)
-            pos = pos + len
+            local slen = byte(buf, pos)
+            if slen + 1 > len then
+                -- truncate the over-run TXT record data
+                slen = len
+            end
+
+            -- print("slen: ", len)
+
+            local val = substr(buf, pos + 1, pos + slen)
+            local last = pos + len
+            pos = pos + slen + 1
+
+            if pos < last then
+                -- more strings to be processed
+                -- this code path is usually cold, so we do not
+                -- merge the following loop on this code path
+                -- with the processing logic above.
+
+                val = {val}
+                local idx = 2
+                repeat
+                    local slen = byte(buf, pos)
+                    if pos + slen + 1 > last then
+                        -- truncate the over-run TXT record data
+                        slen = last - pos - 1
+                    end
+
+                    val[idx] = substr(buf, pos + 1, pos + slen)
+                    idx = idx + 1
+                    pos = pos + slen + 1
+
+                until pos >= last
+            end
+
+            ans.txt = val
 
         elseif typ == TYPE_PTR then
 

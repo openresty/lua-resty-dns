@@ -171,7 +171,7 @@ which usually takes some of the following fields:
 	The raw resource data (RDATA) for resource records that are not recognized.
 * `txt`
 
-	The record value for `TXT` records.
+	The record value for `TXT` records. When there is only one character string in this record, then this field takes a single Lua string. Otherwise this field takes a Lua table holding all the strings.
 * `ptrdname`
 
 	The record value for `PTR` records.

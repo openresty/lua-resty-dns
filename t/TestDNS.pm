@@ -9,6 +9,7 @@ use Test::Nginx::Socket::Lua -Base;
 
 use constant {
     TYPE_A => 1,
+    TYPE_TXT => 16,
     TYPE_CNAME => 5,
     TYPE_AAAA => 28,
     CLASS_INTERNET => 1,
@@ -176,6 +177,14 @@ sub gen_dns_reply ($$) {
             $rddata //= $cname;
             $rdlength //= length $rddata;
             $type //= TYPE_CNAME;
+            $class //= CLASS_INTERNET;
+        }
+
+        my $txt = $ans->{txt};
+        if (defined $txt) {
+            $rddata //= $txt;
+            $rdlength //= length $rddata;
+            $type //= TYPE_TXT;
             $class //= CLASS_INTERNET;
         }
 

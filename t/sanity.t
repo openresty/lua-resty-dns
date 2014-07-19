@@ -16,7 +16,7 @@ our $HttpConfig = qq{
 
 $ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
 
-#no_long_string();
+no_long_string();
 
 run_tests();
 
@@ -303,7 +303,7 @@ records: {}
 --- request
 GET /t
 --- response_body_like chop
-^records: \[\{.*?"txt":"[^"]+".*?\}\]$
+^records: \[\{.*?"txt":"v=spf\d+\s[^"]+".*?\}\]$
 --- no_error_log
 [error]
 

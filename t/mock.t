@@ -6,12 +6,12 @@ use Cwd qw(cwd);
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks() + 10);
+plan tests => repeat_each() * (3 * blocks() + 14);
 
 my $pwd = cwd();
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;;";
+    lua_package_path "$pwd/lib/?.lua;$pwd/t/lib/?.lua;;";
     lua_package_cpath "/usr/local/openresty-debug/lualib/?.so;/usr/local/openresty/lualib/?.so;;";
 };
 
@@ -1232,4 +1232,192 @@ records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl
 --- error_log
 query the TCP server due to reply truncation
 --- log_level: debug
+
+
+
+=== TEST 26: single answer reply, TXT answer with a single char string
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_TXT })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qtype => 16,  # TXT
+    qname => 'www.google.com',
+    answer => [{ name => "www.google.com", txt => "\5hello", ttl => 123456 }],
+}
+--- request
+GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{10}\x{00}\x{01}"
+--- response_body
+records: [{"class":1,"name":"www.google.com","ttl":123456,"txt":"hello","type":16}]
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: single answer reply, TXT answer with a null char string
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_TXT })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qtype => 16,  # TXT
+    qname => 'www.google.com',
+    answer => [{ name => "www.google.com", txt => "\0", ttl => 123456 }],
+}
+--- request
+GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{10}\x{00}\x{01}"
+--- response_body
+records: [{"class":1,"name":"www.google.com","ttl":123456,"txt":"","type":16}]
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: single answer reply, TXT answer with a multiple char strings
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_TXT })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qtype => 16,  # TXT
+    qname => 'www.google.com',
+    answer => [{ name => "www.google.com", txt => "\5hello\5world", ttl => 123456 }],
+}
+--- request
+GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{10}\x{00}\x{01}"
+--- response_body
+records: [{"class":1,"name":"www.google.com","ttl":123456,"txt":["hello","world"],"type":16}]
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: single answer reply, multiple TXT answers
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_TXT })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qtype => 16,  # TXT
+    qname => 'www.google.com',
+    answer => [{ name => "www.google.com", txt => "\5hello\6world!", ttl => 123456 }, { name => "www.google.com", txt => "\4blah", ttl => 123456 }],
+}
+--- request
+GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{10}\x{00}\x{01}"
+--- response_body
+records: [{"class":1,"name":"www.google.com","ttl":123456,"txt":["hello","world!"],"type":16},{"class":1,"name":"www.google.com","ttl":123456,"txt":"blah","type":16}]
+--- no_error_log
+[error]
 
