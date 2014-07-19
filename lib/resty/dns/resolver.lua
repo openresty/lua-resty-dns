@@ -7,7 +7,6 @@ local udp = ngx.socket.udp
 local rand = math.random
 local char = string.char
 local byte = string.byte
-local strlen = string.len
 local find = string.find
 local gsub = string.gsub
 local substr = string.sub
@@ -176,7 +175,7 @@ end
 
 
 local function _encode_name(s)
-    return char(strlen(s)) .. s
+    return char(#s) .. s
 end
 
 
@@ -279,7 +278,7 @@ end
 
 
 local function parse_response(buf, id)
-    local n = strlen(buf)
+    local n = #buf
     if n < 12 then
         return nil, 'truncated';
     end
@@ -655,7 +654,7 @@ local function _tcp_query(self, query, id)
     end
 
     query = concat(query, "")
-    local len = strlen(query)
+    local len = #query
 
     local len_hi = char(rshift(len, 8))
     local len_lo = char(band(len, 0xff))
