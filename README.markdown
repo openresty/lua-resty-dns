@@ -25,6 +25,7 @@ Table of Contents
     * [TYPE_TXT](#type_txt)
     * [TYPE_AAAA](#type_aaaa)
     * [TYPE_SRV](#type_srv)
+    * [TYPE_SPF](#type_spf)
     * [CLASS_IN](#class_in)
 * [Automatic Error Logging](#automatic-error-logging)
 * [Limitations](#limitations)
@@ -311,6 +312,16 @@ See RFC 2782 for details.
 
 [Back to TOC](#table-of-contents)
 
+TYPE_SPF
+---------
+`syntax: typ = r.TYPE_SPF`
+
+The `SPF` resource record type, equal to the decimal number `99`.
+
+See RFC 4408 for details.
+
+[Back to TOC](#table-of-contents)
+
 CLASS_IN
 --------
 `syntax: class = r.CLASS_IN`
@@ -352,7 +363,7 @@ TODO
 ====
 
 * Concurrent (or parallel) query mode
-* Better support for other resource record types like `SPF`.
+* Better support for other resource record types like `TLSA`.
 
 [Back to TOC](#table-of-contents)
 

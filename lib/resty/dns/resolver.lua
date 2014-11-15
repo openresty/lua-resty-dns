@@ -37,6 +37,7 @@ local TYPE_MX     = 15
 local TYPE_TXT    = 16
 local TYPE_AAAA   = 28
 local TYPE_SRV    = 33
+local TYPE_SPF    = 99
 
 local CLASS_IN    = 1
 
@@ -51,6 +52,7 @@ local _M = {
     TYPE_TXT    = TYPE_TXT,
     TYPE_AAAA   = TYPE_AAAA,
     TYPE_SRV    = TYPE_SRV,
+    TYPE_SPF    = TYPE_SPF,
     CLASS_IN    = CLASS_IN,
 }
 
@@ -560,7 +562,9 @@ local function parse_response(buf, id)
 
             ans.nsdname = name
 
-        elseif typ == TYPE_TXT then
+        elseif typ == TYPE_TXT or typ == TYPE_SPF then
+
+            local key = (typ == TYPE_TXT) and "txt" or "spf"
 
             local slen = byte(buf, pos)
             if slen + 1 > len then
@@ -596,7 +600,7 @@ local function parse_response(buf, id)
                 until pos >= last
             end
 
-            ans.txt = val
+            ans[key] = val
 
         elseif typ == TYPE_PTR then
 
