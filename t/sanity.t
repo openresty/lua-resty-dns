@@ -1,15 +1,6 @@
 # vim:set ft= ts=4 sw=4 et:
 
-our $SkipReason;
-
-BEGIN {
-    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
-        $SkipReason = "unavailable for the real-world tests hitting Google's open DNS server";
-
-    }
-}
-
-use Test::Nginx::Socket::Lua $SkipReason ? (skip_all => $SkipReason) : ();
+use Test::Nginx::Socket::Lua;
 use Cwd qw(cwd);
 
 repeat_each(2);
