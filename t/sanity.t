@@ -23,7 +23,7 @@ our $HttpConfig = qq{
     lua_package_cpath "/usr/local/openresty-debug/lualib/?.so;/usr/local/openresty/lualib/?.so;;";
 };
 
-$ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
+$ENV{TEST_NGINX_RESOLVER} ||= '8.8.8.8';
 
 no_long_string();
 
