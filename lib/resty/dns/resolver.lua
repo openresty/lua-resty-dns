@@ -43,7 +43,7 @@ local CLASS_IN    = 1
 
 
 local _M = {
-    _VERSION    = '0.13',
+    _VERSION    = '0.14',
     TYPE_A      = TYPE_A,
     TYPE_NS     = TYPE_NS,
     TYPE_CNAME  = TYPE_CNAME,
