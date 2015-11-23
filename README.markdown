@@ -106,7 +106,7 @@ Methods
 
 new
 ---
-`syntax: r, err = resty.dns.resolver:new(opts)`
+`syntax: r, err = class:new(opts)`
 
 Creates a dns.resolver object. Returns `nil` and an message string on error.
 
