@@ -10,6 +10,7 @@ local byte = string.byte
 local find = string.find
 local gsub = string.gsub
 local sub = string.sub
+local rep = string.rep
 local format = string.format
 local band = bit.band
 local rshift = bit.rshift
@@ -25,6 +26,10 @@ local ngx_time = ngx.time
 local setmetatable = setmetatable
 local type = type
 
+local ok, new_tab = pcall(require, "table.new")
+if not ok then
+    new_tab = function (narr, nrec) return {} end
+end
 
 local DOT_CHAR = byte(".")
 
@@ -794,6 +799,70 @@ function _M.compress_ipv6_addr(addr)
     end
 
     return addr
+end
+
+
+local function _expand_ipv6_addr(addr)
+    if find(addr, "::") then
+        local ncol = 0
+
+        for i=1, #addr do
+            if sub(addr, i, i) == ":" then
+                ncol = ncol + 1
+            end
+        end
+
+        if addr == "::" then
+            addr = "0::0"
+        elseif sub(addr, 1, 2) == "::" then
+            addr = "0" .. addr
+        end
+
+        addr = re_sub(addr, "::", ":" .. rep("0:",8 - ncol), "jo")
+    end
+
+    return addr
+end
+
+
+function _M.expand_ipv6_addr = _expand_ipv6_addr
+
+
+function _M.arpa_str(addr)
+    local arpa = ".in-addr.arpa"
+    
+    if find(addr, ":") then
+        addr, arpa = _expand_ipv6_addr(addr), ".ip6.arpa"
+        local tmp, idx, hidx, addrlen = new_tab(32,0), 1, 1, #addr
+        
+        for i = addrlen, 1, -1 do
+            local s = sub(addr, i, i)
+            if s == ":" then
+                for j = hidx, 4 do
+                    tmp[idx] = "0"
+                    idx = idx + 1
+                end
+                hidx = 1
+            else
+                tmp[idx] = s
+                idx = idx + 1
+                hidx = hidx + 1
+            end
+        end
+
+        addr = concat(tmp, ".")
+    else
+        addr = re_sub(addr, [[(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})]], 
+            "$4.$3.$2.$1", "ajo")
+    end
+    
+    return addr .. arpa
+end
+
+
+function _M.reverse_query(self, addr)
+    return self.query(self, self.arpa_str(addr),
+        { qtype = self.TYPE_PTR })
 end
 
 
