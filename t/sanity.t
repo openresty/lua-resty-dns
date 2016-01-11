@@ -500,3 +500,36 @@ records: {}
 [error]
 --- timeout: 10
 
+
+
+=== TEST 16: generate arpa_str
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+            local c = resolver.arpa_str
+            ngx.say(c("1234:5678:abcd:ef99:1234:5678:abcd:ef99"))
+            ngx.say(c("1080::8:800:200c:417a"))
+            ngx.say(c("ff01::101"))
+            ngx.say(c("::1"))
+            ngx.say(c("::"))
+            ngx.say(c("1::"))
+            ngx.say(c("127.0.0.1"))
+            ngx.say(c("251.252.253.254"))
+        ';
+    }
+--- request
+GET /t
+--- response_body
+9.9.f.e.d.c.b.a.8.7.6.5.4.3.2.1.9.9.f.e.d.c.b.a.8.7.6.5.4.3.2.1.ip6.arpa
+a.7.1.4.c.0.0.2.0.0.8.0.8.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.0.1.ip6.arpa
+1.0.1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.f.f.ip6.arpa
+1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa
+0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa
+0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.ip6.arpa
+1.0.0.127.in-addr.arpa
+254.253.252.251.in-addr.arpa
+--- no_error_log
+[error]
+

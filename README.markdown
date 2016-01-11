@@ -16,6 +16,9 @@ Table of Contents
     * [tcp_query](#tcp_query)
     * [set_timeout](#set_timeout)
     * [compress_ipv6_addr](#compress_ipv6_addr)
+    * [expand_ipv6_addr](#expand_ipv6_addr)
+    * [arpa_str](#arpa_str)
+    * [reverse_query](#reverse_query)
 * [Constants](#constants)
     * [TYPE_A](#type_a)
     * [TYPE_NS](#type_ns)
@@ -244,6 +247,52 @@ For example,
 ```
 
 will yield `FF01::101` in the `new_addr` return value.
+
+[Back to TOC](#table-of-contents)
+
+expand_ipv6_addr
+------------------
+`syntax: expandeded = resty.dns.resolver.expand_ipv6_addr(address)`
+
+Expand the successive 16-bit zero groups in the textual format of the IPv6 address.
+
+For example,
+
+```lua
+    local resolver = require "resty.dns.resolver"
+    local expand = resolver.expand_ipv6_addr
+    local new_addr = expand("FF01::101")
+```
+
+will yield `FF01:0:0:0:0:0:0:101` in the `new_addr` return value.
+
+[Back to TOC](#table-of-contents)
+
+arpa_str
+------------------
+`syntax: arpa_record = resty.dns.resolver.arpa_str(address)`
+
+Generates the reverse domain name for PTR lookups for both IPv4 and IPv6 addresses. Compressed IPv6 addresses
+will be automatically expanded.
+
+For example,
+
+```lua
+    local resolver = require "resty.dns.resolver"
+    local ptr4 = resolver.arpa_str("1.2.3.4")
+    local ptr6 = resolver.arpa_str("FF01::101")
+```
+
+will yield `4.3.2.1.in-addr.arpa` for `ptr4` and `1.0.1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.F.F.ip6.arpa` for `ptr6`.
+
+[Back to TOC](#table-of-contents)
+
+reverse_query
+------------------
+`syntax: answers, err = r:reverse_query(address)`
+
+Performs a PTR lookup for both IPv4 and IPv6 addresses. This function is basically a wrapper for the `query` command
+which uses the `arpa_str` command to convert the IP address on the fly.
 
 [Back to TOC](#table-of-contents)
 
