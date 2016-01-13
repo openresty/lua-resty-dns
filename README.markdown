@@ -252,9 +252,9 @@ will yield `FF01::101` in the `new_addr` return value.
 
 expand_ipv6_addr
 ------------------
-`syntax: expandeded = resty.dns.resolver.expand_ipv6_addr(address)`
+`syntax: expanded = resty.dns.resolver.expand_ipv6_addr(address)`
 
-Expand the successive 16-bit zero groups in the textual format of the IPv6 address.
+Expands the successive 16-bit zero groups in the textual format of the IPv6 address.
 
 For example,
 
