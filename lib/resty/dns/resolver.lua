@@ -764,41 +764,31 @@ function _M.query(self, qname, opts)
         local sock = pick_sock(self, socks)
 
         local ok, err = sock:send(query)
-        if not ok then
-            local server = _get_cur_server(self)
-            return nil, "failed to send request to UDP server "
-                .. concat(server, ":") .. ": " .. err
-        end
+        if ok then
+            local buf
 
-        local buf, err
+            for j = 1, 128 do
+                buf, err = sock:receive(4096)
+                if err then
+                    break
+                end
 
-        for j = 1, 128 do
-            buf, err = sock:receive(4096)
-
-            if err then
-                break
-            end
-
-            if buf then
-                local answers
-                answers, err = parse_response(buf, id)
-                if not answers then
-                    if err == "truncated" then
-                        return _tcp_query(self, query, id)
+                if buf then
+                    local answers
+                    answers, err = parse_response(buf, id)
+                    if not answers then
+                        if err == "truncated" then
+                            answers, err =  _tcp_query(self, query, id)
+                        end
                     end
-
-                    if err ~= "id mismatch" then
-                        return nil, err
+                    if answers and not answers.errcode then
+                        return answers
                     end
-
-                    -- retry receiving when err == "id mismatch"
-                else
-                    return answers
                 end
             end
         end
-
-        if err ~= "timeout" or i == retrans then
+        if  i == retrans then
+         
             local server = _get_cur_server(self)
             return nil, "failed to receive reply from UDP server "
                 .. concat(server, ":") .. ": " .. err
