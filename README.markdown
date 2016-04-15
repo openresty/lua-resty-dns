@@ -30,6 +30,9 @@ Table of Contents
     * [TYPE_SRV](#type_srv)
     * [TYPE_SPF](#type_spf)
     * [CLASS_IN](#class_in)
+    * [SECTION_AN](#section_an)
+    * [SECTION_NS](#section_ns)
+    * [SECTION_AR](#section_ar)
 * [Automatic Error Logging](#automatic-error-logging)
 * [Limitations](#limitations)
 * [TODO](#todo)
@@ -120,13 +123,13 @@ It accepts a `opts` table argument. The following options are supported:
 	a list of nameservers to be used. Each nameserver entry can be either a single hostname string or a table holding both the hostname string and the port number. The nameserver is picked up by a simple round-robin algorithm for each `query` method call. This option is required.
 * `retrans`
 
-	the total number of times of retransmitting the DNS request when receiving a DNS response times out according to the `timeout` setting. Default to `5` times. When trying to retransmit the query, the next nameserver according to the round-robin algorithm will be picked up.
+	the total number of times of retransmitting the DNS request when receiving a DNS response times out according to the `timeout` setting. Defaults to `5` times. When trying to retransmit the query, the next nameserver according to the round-robin algorithm will be picked up.
 * `timeout`
 
 	the time in milliseconds for waiting for the respond for a single attempt of request transmition. note that this is ''not'' the maximal total waiting time before giving up, the maximal total waiting time can be calculated by the expression `timeout x retrans`. The `timeout` setting can also be changed by calling the `set_timeout` method. The default `timeout` setting is 2000 milliseconds, or 2 seconds.
 * `no_recurse`
 
-	a boolean flag controls whether to disable the "recursion desired" (RD) flag in the UDP request. Default to `false`.
+	a boolean flag controls whether to disable the "recursion desired" (RD) flag in the UDP request. Defaults to `false`.
 
 [Back to TOC](#table-of-contents)
 
@@ -152,6 +155,9 @@ which usually takes some of the following fields:
 * `address`
 
 	The IPv4 or IPv6 address in their textual representations when the resource record type is either `1` (`TYPE_A`) or `28` (`TYPE_AAAA`), respectively. Secussesive 16-bit zero groups in IPv6 addresses will not be compressed by default, if you want that, you need to call the `compress_ipv6_addr` static method instead.
+* `section`
+
+	The identifier of the section that the current answer record belongs to. Possible values are `1` (`SECTION_AN`), `2` (`SECTION_NS`), and `3` (`SECTION_AR`).
 * `cname`
 
 	The (decoded) record data value for `CNAME` resource records. Only present for `CNAME` records.
@@ -185,6 +191,12 @@ This method also takes an optional `options` argument table, which takes the fol
 * `qtype`
 
 	The type of the question. Possible values are `1` (`TYPE_A`), `5` (`TYPE_CNAME`), `28` (`TYPE_AAAA`), or any other QTYPE value specified by RFC 1035 and RFC 3596. Default to `1` (`TYPE_A`).
+* `authority_section`
+
+	When set to a true value, the `answers` return value includes the `Authority` section of the DNS response. Default to `false`.
+* `additional_section`
+
+	When set to a true value, the `answers` return value includes the `Additional` section of the DNS response. Default to `false`.
 
 When data truncation happens, the resolver will automatically retry using the TCP transport mode
 to query the current nameserver. All TCP connections are short lived.
@@ -378,6 +390,24 @@ CLASS_IN
 The `Internet` resource record type, equal to the decimal number `1`.
 
 [Back to TOC](#table-of-contents)
+
+SECTION_AN
+----------
+`syntax: stype = r.SECTION_AN`
+
+Identifier of the `Answer` section in the DNS response. Equal to decimal number `1`.
+
+SECTION_NS
+----------
+`syntax: stype = r.SECTION_NS`
+
+Identifier of the `Authority` section in the DNS response. Equal to the decimal number `2`.
+
+SECTION_AR
+----------
+`syntax: stype = r.SECTION_AR`
+
+Idnetifier of the `Additional` section in the DNS response. Equal to the decimal number `3`.
 
 Automatic Error Logging
 =======================

@@ -73,7 +73,7 @@ GET /t
 --- udp_query eval
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
 --- response_body
-records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456}]
+records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456}]
 --- no_error_log
 [error]
 
@@ -237,7 +237,7 @@ connect() failed
 --- request
 GET /t
 --- response_body
-records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456},{"address":"0:0:0:0:0:0:0:1","type":28,"class":1,"name":"l.www.google.com","ttl":0}]
+records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456},{"address":"0:0:0:0:0:0:0:1","section":1,"type":28,"class":1,"name":"l.www.google.com","ttl":0}]
 --- no_error_log
 [error]
 
@@ -283,7 +283,7 @@ records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl
 --- request
 GET /t
 --- response_body
-records: [{"ttl":125,"type":5,"class":1,"name":"www.google.com","cname":"blah.google.com"}]
+records: [{"section":1,"ttl":125,"type":5,"class":1,"name":"www.google.com","cname":"blah.google.com"}]
 --- no_error_log
 [error]
 
@@ -520,7 +520,7 @@ lua udp socket read timed out
 --- request
 GET /t
 --- response_body
-records: [{"address":"ff01:0:0:0:0:0:0:101","type":28,"class":1,"name":"l.www.google.com","ttl":0}]
+records: [{"address":"ff01:0:0:0:0:0:0:101","section":1,"type":28,"class":1,"name":"l.www.google.com","ttl":0}]
 --- error_log
 lua udp socket read timed out
 --- timeout: 3
@@ -675,7 +675,7 @@ records: {"errcode":1,"errstr":"format error"}
 GET /t
 --- response_body
 error code: 2: server failure
-record: {"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456}
+record: {"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456}
 --- no_error_log
 [error]
 
@@ -1122,7 +1122,7 @@ GET /t
 --- udp_query eval
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
 --- response_body
-records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456}]
+records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456}]
 --- error_log
 id mismatch in the DNS reply: 126 ~= 125
 id mismatch in the DNS reply: 120 ~= 125
@@ -1183,7 +1183,7 @@ id mismatch in the DNS reply: 127 ~= 125
 --- request
 GET /t
 --- response_body
-records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456},{"address":"0:0:0:0:0:0:0:1","type":28,"class":1,"name":"l.www.google.com","ttl":0}]
+records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456},{"address":"0:0:0:0:0:0:0:1","section":1,"type":28,"class":1,"name":"l.www.google.com","ttl":0}]
 --- no_error_log
 [error]
 --- error_log
@@ -1236,7 +1236,7 @@ query the TCP server due to reply truncation
 --- request
 GET /t
 --- response_body
-records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456},{"address":"0:0:0:0:0:0:0:1","type":28,"class":1,"name":"l.www.google.com","ttl":0}]
+records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456},{"address":"0:0:0:0:0:0:0:1","section":1,"type":28,"class":1,"name":"l.www.google.com","ttl":0}]
 --- no_error_log
 [error]
 --- error_log
@@ -1286,7 +1286,7 @@ GET /t
 --- udp_query eval
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{10}\x{00}\x{01}"
 --- response_body
-records: [{"class":1,"name":"www.google.com","ttl":123456,"txt":"hello","type":16}]
+records: [{"class":1,"name":"www.google.com","section":1,"ttl":123456,"txt":"hello","type":16}]
 --- no_error_log
 [error]
 
@@ -1333,7 +1333,7 @@ GET /t
 --- udp_query eval
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{10}\x{00}\x{01}"
 --- response_body
-records: [{"class":1,"name":"www.google.com","ttl":123456,"txt":"","type":16}]
+records: [{"class":1,"name":"www.google.com","section":1,"ttl":123456,"txt":"","type":16}]
 --- no_error_log
 [error]
 
@@ -1380,7 +1380,7 @@ GET /t
 --- udp_query eval
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{10}\x{00}\x{01}"
 --- response_body
-records: [{"class":1,"name":"www.google.com","ttl":123456,"txt":["hello","world"],"type":16}]
+records: [{"class":1,"name":"www.google.com","section":1,"ttl":123456,"txt":["hello","world"],"type":16}]
 --- no_error_log
 [error]
 
@@ -1427,13 +1427,210 @@ GET /t
 --- udp_query eval
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{10}\x{00}\x{01}"
 --- response_body
-records: [{"class":1,"name":"www.google.com","ttl":123456,"txt":["hello","world!"],"type":16},{"class":1,"name":"www.google.com","ttl":123456,"txt":"blah","type":16}]
+records: [{"class":1,"name":"www.google.com","section":1,"ttl":123456,"txt":["hello","world!"],"type":16},{"class":1,"name":"www.google.com","section":1,"ttl":123456,"txt":"blah","type":16}]
 --- no_error_log
 [error]
 
 
 
-=== TEST 30: single answer reply, good A answer (AD is set)
+=== TEST 30: reply with authority section
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.SRV, authority_section = true })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        }
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qname => "www.google.com",
+    answer => [
+        {
+            name => "www.google.com",
+            srv => "test_service.www.google.com",
+            weight => 0,
+            port => 8080,
+            priority => 1,
+            qtypt => 33,
+            ttl => 0
+        }
+    ],
+    authority => [
+        {
+            name => "test_service.www.google.com",
+            ipv4 => "127.0.0.1",
+            ttl => 0
+        }
+    ]
+}
+--- request
+GET /t
+--- response_body
+records: [{"class":1,"name":"www.google.com","port":8080,"priority":1,"section":1,"target":"test_service.www.google.com","ttl":0,"type":33,"weight":0},{"address":"127.0.0.1","class":1,"name":"test_service.www.google.com","section":2,"ttl":0,"type":1}]
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: reply with additional section
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.SRV, additional_section = true })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        }
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qname => "www.google.com",
+    answer => [
+        {
+            name => "www.google.com",
+            srv => "test_service.www.google.com",
+            weight => 0,
+            port => 8080,
+            priority => 1,
+            qtypt => 33,
+            ttl => 0
+        }
+    ],
+    authority => [
+        {
+            name => "test_service.www.google.com",
+            ipv4 => "127.0.0.1",
+            ttl => 0
+        }
+    ],
+    additional => [
+        {
+            name => "test_service.www.google.com",
+            ipv4 => "127.0.0.1",
+            ttl => 0
+        }
+    ]
+}
+--- request
+GET /t
+--- response_body
+records: [{"class":1,"name":"www.google.com","port":8080,"priority":1,"section":1,"target":"test_service.www.google.com","ttl":0,"type":33,"weight":0},{"address":"127.0.0.1","class":1,"name":"test_service.www.google.com","section":3,"ttl":0,"type":1}]
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: reply all sections
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.SRV, additional_section = true, authority_section = true })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        }
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qname => "www.google.com",
+    answer => [
+        {
+            name => "www.google.com",
+            srv => "test_service.www.google.com",
+            weight => 0,
+            port => 8080,
+            priority => 1,
+            qtypt => 33,
+            ttl => 0
+        }
+    ],
+    authority => [
+        {
+            name => "test_service.www.google.com",
+            ipv4 => "127.0.0.1",
+            ttl => 0
+        }
+    ],
+    additional => [
+        {
+            name => "test_service.www.google.com",
+            ipv4 => "127.0.0.1",
+            ttl => 0
+        }
+    ]
+}
+--- request
+GET /t
+--- response_body
+records: [{"class":1,"name":"www.google.com","port":8080,"priority":1,"section":1,"target":"test_service.www.google.com","ttl":0,"type":33,"weight":0},{"address":"127.0.0.1","class":1,"name":"test_service.www.google.com","section":2,"ttl":0,"type":1},{"address":"127.0.0.1","class":1,"name":"test_service.www.google.com","section":3,"ttl":0,"type":1}]
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: single answer reply, good A answer (AD is set)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -1474,13 +1671,13 @@ GET /t
 --- udp_query eval
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
 --- response_body
-records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456}]
+records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456}]
 --- no_error_log
 [error]
 
 
 
-=== TEST 31: single answer reply, good A answer (CD is set)
+=== TEST 34: single answer reply, good A answer (CD is set)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -1521,6 +1718,6 @@ GET /t
 --- udp_query eval
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
 --- response_body
-records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456}]
+records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456}]
 --- no_error_log
 [error]
