@@ -335,7 +335,7 @@ local function parse_response(buf, id)
         return nil, "truncated"
     end
 
-    local code = band(flags, 0x7f)
+    local code = band(flags, 0x0f)
 
     -- print(format("code: %d", code))
 
