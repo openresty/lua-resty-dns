@@ -120,9 +120,15 @@ sub gen_dns_reply ($$) {
     my $tc = $t->{tc} // 0;
     my $rd = $t->{rd} // 1;
     my $ra = $t->{ra} // 1;
+
+    my $ad = $t->{ad} // 0;
+    my $cd = $t->{cd} // 0;
+
     my $rcode = $t->{rcode} // 0;
 
-    my $flags = ($qr << 15) + ($opcode << 11) + ($aa << 10) + ($tc << 9) + ($rd << 8) + ($ra << 7) + $rcode;
+    my $flags = ($qr << 15) + ($opcode << 11) + ($aa << 10) + ($tc << 9)
+                + ($rd << 8) + ($ra << 7) + ($ad << 4) + ($cd << 5) + $rcode;
+
     #warn sprintf("flags: %b", $flags);
 
     $flags = pack("n", $flags);

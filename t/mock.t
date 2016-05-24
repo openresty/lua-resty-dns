@@ -6,7 +6,7 @@ use Cwd qw(cwd);
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks() + 14);
+plan tests => repeat_each() * (3 * blocks() + 16);
 
 my $pwd = cwd();
 
@@ -1421,3 +1421,96 @@ records: [{"class":1,"name":"www.google.com","ttl":123456,"txt":["hello","world!
 --- no_error_log
 [error]
 
+
+
+=== TEST 30: single answer reply, good A answer (AD is set)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qname => 'www.google.com',
+    ad => 1,
+    answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 }],
+}
+--- request
+GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
+--- response_body
+records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456}]
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: single answer reply, good A answer (CD is set)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qname => 'www.google.com',
+    cd => 1,
+    answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 }],
+}
+--- request
+GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
+--- response_body
+records: [{"address":"127.0.0.1","type":1,"class":1,"name":"www.google.com","ttl":123456}]
+--- no_error_log
+[error]
