@@ -950,6 +950,7 @@ GET /t
 failed to query: bad QR flag in the DNS response
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
@@ -998,6 +999,7 @@ GET /t
 records: {}
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
