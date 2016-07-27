@@ -1,7 +1,15 @@
 # vim:set ft= ts=4 sw=4 et:
 
+my $skip;
+
+BEGIN {
+    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
+        $skip = "skipped in check leak mode";
+    }
+}
+
 use lib 't';
-use TestDNS;
+use TestDNS (defined $skip ? (skip_all => $skip) : ());
 use Cwd qw(cwd);
 
 repeat_each(2);
