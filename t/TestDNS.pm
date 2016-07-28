@@ -12,12 +12,14 @@ use constant {
     TYPE_TXT => 16,
     TYPE_CNAME => 5,
     TYPE_AAAA => 28,
+    TYPE_SRV => 33,
     CLASS_INTERNET => 1,
 };
 
 sub encode_name ($);
 sub encode_ipv4 ($);
 sub encode_ipv6 ($);
+sub encode_record ($);
 sub gen_dns_reply ($$);
 
 sub Test::Base::Filter::dns {
@@ -80,6 +82,7 @@ sub Test::Base::Filter::dns {
     return $input;
 }
 
+
 sub gen_dns_reply ($$) {
     my ($t, $mode) = @_;
 
@@ -91,10 +94,34 @@ sub gen_dns_reply ($$) {
         $answers = [$answers];
     }
 
+    my $authority_answers = $t->{authority} // [];
+    if (!ref $authority_answers) {
+        $authority_answers = [$authority_answers];
+    }
+
+    my $additional_answers = $t->{additional} // [];
+    if (!ref $additional_answers) {
+        $additional_answers = [$additional_answers];
+    }
+
     for my $ans (@$answers) {
         push @raw_names, \($ans->{name});
         if (defined $ans->{cname}) {
             push @raw_names, \($ans->{cname});
+        }
+    }
+
+    for my $nsans (@$authority_answers) {
+        push @raw_names, \($nsans->{name});
+        if (defined $nsans->{cname}) {
+            push @raw_names, \($nsans->{cname});
+        }
+    }
+
+    for my $arans (@$additional_answers) {
+        push @raw_names, \($arans->{name});
+        if (defined $arans->{cname}) {
+            push @raw_names, \($arans->{cname});
         }
     }
 
@@ -138,8 +165,8 @@ sub gen_dns_reply ($$) {
 
     my $qdcount = $t->{qdcount} // 1;
     my $ancount = $t->{ancount} // scalar @$answers;
-    my $nscount = 0;
-    my $arcount = 0;
+    my $nscount = $t->{nscount} // scalar @$authority_answers;
+    my $arcount = $t->{arcount} // scalar @$additional_answers;
 
     $s .= pack("nnnn", $qdcount, $ancount, $nscount, $arcount);
 
@@ -153,54 +180,15 @@ sub gen_dns_reply ($$) {
     $s .= pack("nn", $qs_type, $qs_class);
 
     for my $ans (@$answers) {
-        my $name = $ans->{name};
-        my $type = $ans->{type};
-        my $class = $ans->{class};
-        my $ttl = $ans->{ttl};
-        my $rdlength = $ans->{rdlength};
-        my $rddata = $ans->{rddata};
+        $s .= encode_record($ans);
+    }
 
-        my $ipv4 = $ans->{ipv4};
-        if (defined $ipv4) {
-            my ($data, $len) = encode_ipv4($ipv4);
-            $rddata //= $data;
-            $rdlength //= $len;
-            $type //= TYPE_A;
-            $class //= CLASS_INTERNET;
-        }
+    for my $nsans (@$authority_answers) {
+        $s .= encode_record($nsans);
+    }
 
-        my $ipv6 = $ans->{ipv6};
-        if (defined $ipv6) {
-            my ($data, $len) = encode_ipv6($ipv6);
-            $rddata //= $data;
-            $rdlength //= $len;
-            $type //= TYPE_AAAA;
-            $class //= CLASS_INTERNET;
-        }
-
-        my $cname = $ans->{cname};
-        if (defined $cname) {
-            $rddata //= $cname;
-            $rdlength //= length $rddata;
-            $type //= TYPE_CNAME;
-            $class //= CLASS_INTERNET;
-        }
-
-        my $txt = $ans->{txt};
-        if (defined $txt) {
-            $rddata //= $txt;
-            $rdlength //= length $rddata;
-            $type //= TYPE_TXT;
-            $class //= CLASS_INTERNET;
-        }
-
-        $type //= 0;
-        $class //= 0;
-        $ttl //= 0;
-
-        #warn "rdlength: $rdlength, rddata: ", encode_json([$rddata]), "\n";
-
-        $s .= $name . pack("nnNn", $type, $class, $ttl, $rdlength) . $rddata;
+    for my $arans (@$additional_answers) {
+        $s .= encode_record($arans);
     }
 
     if ($mode eq 'tcp') {
@@ -272,6 +260,65 @@ sub encode_name ($) {
     $name =~ s/([^.]+)\.?/chr(length($1)) . $1/ge;
     $name .= "\0";
     return $name;
+}
+
+sub encode_record ($) {
+    my $ans = shift;
+    my $name = $ans->{name};
+    my $type = $ans->{type};
+    my $class = $ans->{class};
+    my $ttl = $ans->{ttl};
+    my $rdlength = $ans->{rdlength};
+    my $rddata = $ans->{rddata};
+
+    my $ipv4 = $ans->{ipv4};
+    if (defined $ipv4) {
+        my ($data, $len) = encode_ipv4($ipv4);
+        $rddata //= $data;
+        $rdlength //= $len;
+        $type //= TYPE_A;
+        $class //= CLASS_INTERNET;
+    }
+
+    my $ipv6 = $ans->{ipv6};
+    if (defined $ipv6) {
+        my ($data, $len) = encode_ipv6($ipv6);
+        $rddata //= $data;
+        $rdlength //= $len;
+        $type //= TYPE_AAAA;
+        $class //= CLASS_INTERNET;
+    }
+
+    my $cname = $ans->{cname};
+    if (defined $cname) {
+        $rddata //= $cname;
+        $rdlength //= length $rddata;
+        $type //= TYPE_CNAME;
+        $class //= CLASS_INTERNET;
+    }
+
+    my $txt = $ans->{txt};
+    if (defined $txt) {
+        $rddata //= $txt;
+        $rdlength //= length $rddata;
+        $type //= TYPE_TXT;
+        $class //= CLASS_INTERNET;
+    }
+
+
+    my $srv = $ans->{srv};
+    if (defined $srv) {
+        $rddata //= pack("nnn", $ans->{priority}, $ans->{weight}, $ans->{port}) . encode_name($srv);
+        $rdlength //= length $rddata;
+        $type //= TYPE_SRV;
+        $class //= CLASS_INTERNET;
+    }
+
+    $type //= 0;
+    $class //= 0;
+    $ttl //= 0;
+
+    return $name . pack("nnNn", $type, $class, $ttl, $rdlength) . $rddata;
 }
 
 1
