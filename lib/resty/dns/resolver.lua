@@ -652,9 +652,11 @@ local function parse_response(buf, id, opts)
 
     -- question section layout: qname qtype(2) qclass(2)
 
+    --[[
     local type_hi = byte(buf, pos)
     local type_lo = byte(buf, pos + 1)
     local ans_type = lshift(type_hi, 8) + type_lo
+    ]]
 
     -- print("ans qtype: ", ans_type)
 
