@@ -13,6 +13,7 @@ use constant {
     TYPE_CNAME => 5,
     TYPE_AAAA => 28,
     TYPE_SRV => 33,
+    TYPE_NAPTR => 35,
     CLASS_INTERNET => 1,
 };
 
@@ -261,6 +262,11 @@ sub encode_name ($) {
     return $name;
 }
 
+sub encode_str ($) {
+    my $str = shift;
+    return chr(length($str)) . $str;
+}
+
 sub encode_record ($) {
     my $ans = shift;
     my $name = $ans->{name};
@@ -304,12 +310,23 @@ sub encode_record ($) {
         $class //= CLASS_INTERNET;
     }
 
-
     my $srv = $ans->{srv};
     if (defined $srv) {
         $rddata //= pack("nnn", $ans->{priority}, $ans->{weight}, $ans->{port}) . encode_name($srv);
         $rdlength //= length $rddata;
         $type //= TYPE_SRV;
+        $class //= CLASS_INTERNET;
+    }
+
+    my $services = $ans->{services};
+    if (defined $services) {
+        $rddata //= pack("nn", $ans->{order}, $ans->{preference})
+          . encode_str($ans->{flags})
+          . encode_str($ans->{services})
+          . encode_str($ans->{regexp})
+          . encode_name($ans->{replacements});
+        $rdlength //= length $rddata;
+        $type //= TYPE_NAPTR;
         $class //= CLASS_INTERNET;
     }
 
