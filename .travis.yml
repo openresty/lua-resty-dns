@@ -14,7 +14,7 @@ env:
     - JOBS=3
     - TEST_NGINX_SLEEP=0.006
   matrix:
-    - LUA=libluajit-5.1-dev LUA_DEV=libluajit-5.1-dev LUA_INCLUDE_DIR=/usr/include/luajit-2.0 LUA_CMODULE_DIR=/lib LUALIB=-lluajit-5.1
+    - LUA=libluajit-5.1-dev LUA_DEV=libluajit-5.1-dev LUA_INCLUDE_DIR=/usr/include/luajit-2.0 LUALIB=-lluajit-5.1
 
 install:
     - sudo apt-get update
