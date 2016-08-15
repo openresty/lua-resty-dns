@@ -64,7 +64,7 @@ Note that, this library is bundled and enabled by default in the [OpenResty bund
 Synopsis
 ========
 
-```lua
+```nginx
 lua_package_path "/path/to/lua-resty-dns/lib/?.lua;;";
 
 server {
