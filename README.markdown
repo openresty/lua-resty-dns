@@ -50,12 +50,12 @@ Description
 
 This Lua library provies a DNS resolver for the ngx_lua nginx module:
 
-http://wiki.nginx.org/HttpLuaModule
+https://github.com/openresty/lua-nginx-module/#readme
 
 This Lua library takes advantage of ngx_lua's cosocket API, which ensures
 100% nonblocking behavior.
 
-Note that at least [ngx_lua 0.5.12](https://github.com/chaoslawful/lua-nginx-module/tags) or [OpenResty 1.2.1.11](http://openresty.org/#Download) is required.
+Note that at least [ngx_lua 0.5.12](https://github.com/openresty/lua-nginx-module/tags) or [OpenResty 1.2.1.11](http://openresty.org/#Download) is required.
 
 Also, the [bit library](http://bitop.luajit.org/) is also required. If you're using LuaJIT 2.0 with ngx_lua, then the `bit` library is already available by default.
 
@@ -412,9 +412,9 @@ Idnetifier of the `Additional` section in the DNS response. Equal to the decimal
 Automatic Error Logging
 =======================
 
-By default the underlying [ngx_lua](http://wiki.nginx.org/HttpLuaModule) module
+By default the underlying [ngx_lua](https://github.com/openresty/lua-nginx-module/#readme) module
 does error logging when socket errors happen. If you are already doing proper error
-handling in your own Lua code, then you are recommended to disable this automatic error logging by turning off [ngx_lua](http://wiki.nginx.org/HttpLuaModule)'s [lua_socket_log_errors](http://wiki.nginx.org/HttpLuaModule#lua_socket_log_errors) directive, that is,
+handling in your own Lua code, then you are recommended to disable this automatic error logging by turning off [ngx_lua](https://github.com/openresty/lua-nginx-module/#readme)'s [lua_socket_log_errors](https://github.com/openresty/lua-nginx-module/#lua_socket_log_errors) directive, that is,
 
 ```nginx
     lua_socket_log_errors off;
@@ -430,7 +430,7 @@ header_filter_by_lua* where the ngx_lua cosocket API is not available.
 * The `resty.dns.resolver` object instance cannot be stored in a Lua variable at the Lua module level,
 because it will then be shared by all the concurrent requests handled by the same nginx
  worker process (see
-http://wiki.nginx.org/HttpLuaModule#Data_Sharing_within_an_Nginx_Worker ) and
+https://github.com/openresty/lua-nginx-module/#data-sharing-within-an-nginx-worker ) and
 result in bad race conditions when concurrent requests are trying to use the same `resty.dns.resolver` instance.
 You should always initiate `resty.dns.resolver` objects in function local
 variables or in the `ngx.ctx` table. These places all have their own data copies for
@@ -474,7 +474,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 See Also
 ========
-* the ngx_lua module: http://wiki.nginx.org/HttpLuaModule
+* the ngx_lua module: https://github.com/openresty/lua-nginx-module/#readme
 * the [lua-resty-memcached](https://github.com/agentzh/lua-resty-memcached) library.
 * the [lua-resty-redis](https://github.com/agentzh/lua-resty-redis) library.
 * the [lua-resty-mysql](https://github.com/agentzh/lua-resty-mysql) library.
