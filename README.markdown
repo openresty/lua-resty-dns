@@ -61,6 +61,8 @@ Also, the [bit library](http://bitop.luajit.org/) is also required. If you're us
 
 Note that, this library is bundled and enabled by default in the [OpenResty bundle](http://openresty.org/).
 
+IMPORTANT: to be able generate unique ids, the random generator must be properly seeded using `math.randomseed` prior to using this module.
+
 Synopsis
 ========
 
