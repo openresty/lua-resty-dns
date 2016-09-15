@@ -948,7 +948,4 @@ function _M.reverse_query(self, addr)
 end
 
 
-randomseed(ngx_time())
-
-
 return _M
