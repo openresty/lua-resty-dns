@@ -225,7 +225,7 @@ GET /t
                 return
             end
 
-            local ans, err = r:query("agentzh.org", { qtype = r.TYPE_NS })
+            local ans, err = r:query("google.com", { qtype = r.TYPE_NS })
             if not ans then
                 ngx.say("failed to query: ", err)
                 return
@@ -245,6 +245,7 @@ GET /t
 
 
 === TEST 8: TXT query (no ans)
+--- SKIP
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -470,6 +471,7 @@ GET /t
 
 
 === TEST 15: SPF query (no ans)
+--- SKIP
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
