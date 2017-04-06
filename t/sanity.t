@@ -41,8 +41,8 @@ __DATA__
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
@@ -73,8 +73,8 @@ GET /t
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
@@ -104,8 +104,8 @@ GET /t
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
@@ -167,8 +167,8 @@ FF01::101
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
@@ -199,8 +199,8 @@ GET /t
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
@@ -231,8 +231,8 @@ GET /t
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
@@ -264,8 +264,8 @@ GET /t
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
@@ -297,8 +297,8 @@ records: {}
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
@@ -329,8 +329,8 @@ GET /t
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
@@ -361,8 +361,8 @@ GET /t
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
@@ -393,8 +393,8 @@ GET /t
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
@@ -457,8 +457,8 @@ GET /t
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
@@ -490,14 +490,14 @@ GET /t
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- request
 GET /t
 --- response_body
-records: {}
+records: []
 --- no_error_log
 [error]
 --- timeout: 10

@@ -56,8 +56,8 @@ __DATA__
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -73,7 +73,7 @@ GET /t
 --- udp_query eval
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
 --- response_body
-records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456}]
+records: [{"address":"127.0.0.1","class":1,"name":"www.google.com","section":1,"ttl":123456,"type":1}]
 --- no_error_log
 [error]
 
@@ -102,8 +102,8 @@ records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.goog
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -116,7 +116,7 @@ records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.goog
 --- request
 GET /t
 --- response_body
-records: {}
+records: []
 --- no_error_log
 [error]
 
@@ -143,8 +143,8 @@ records: {}
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -181,8 +181,8 @@ connect() failed
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -219,8 +219,8 @@ connect() failed
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -237,7 +237,7 @@ connect() failed
 --- request
 GET /t
 --- response_body
-records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456},{"address":"0:0:0:0:0:0:0:1","section":1,"type":28,"class":1,"name":"l.www.google.com","ttl":0}]
+records: [{"address":"127.0.0.1","class":1,"name":"www.google.com","section":1,"ttl":123456,"type":1},{"address":"0:0:0:0:0:0:0:1","class":1,"name":"l.www.google.com","section":1,"ttl":0,"type":28}]
 --- no_error_log
 [error]
 
@@ -266,8 +266,8 @@ records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.goog
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -283,7 +283,7 @@ records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.goog
 --- request
 GET /t
 --- response_body
-records: [{"section":1,"ttl":125,"type":5,"class":1,"name":"www.google.com","cname":"blah.google.com"}]
+records: [{"class":1,"cname":"blah.google.com","name":"www.google.com","section":1,"ttl":125,"type":5}]
 --- no_error_log
 [error]
 
@@ -312,8 +312,8 @@ records: [{"section":1,"ttl":125,"type":5,"class":1,"name":"www.google.com","cna
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -358,8 +358,8 @@ failed to query: bad cname record length: 17 ~= 3
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -402,8 +402,8 @@ failed to query: bad A record value length: 1
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -451,8 +451,8 @@ failed to query: bad AAAA record value length: 21
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -502,8 +502,8 @@ lua udp socket read timed out
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -520,7 +520,7 @@ lua udp socket read timed out
 --- request
 GET /t
 --- response_body
-records: [{"address":"ff01:0:0:0:0:0:0:101","section":1,"type":28,"class":1,"name":"l.www.google.com","ttl":0}]
+records: [{"address":"ff01:0:0:0:0:0:0:101","class":1,"name":"l.www.google.com","section":1,"ttl":0,"type":28}]
 --- error_log
 lua udp socket read timed out
 --- timeout: 3
@@ -553,8 +553,8 @@ lua udp socket read timed out
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -604,8 +604,8 @@ lua udp socket read timed out
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -651,14 +651,14 @@ records: {"errcode":1,"errstr":"format error"}
                 return
             end
 
-            local cjson = require "cjson"
+            local ljson = require "ljson"
 
             if ans.errcode then
                 ngx.say("error code: ", ans.errcode, ": ", ans.errstr)
             end
 
             for i, rec in ipairs(ans) do
-                ngx.say("record: ", cjson.encode(rec))
+                ngx.say("record: ", ljson.encode(rec))
             end
         ';
     }
@@ -675,7 +675,7 @@ records: {"errcode":1,"errstr":"format error"}
 GET /t
 --- response_body
 error code: 2: server failure
-record: {"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456}
+record: {"address":"127.0.0.1","class":1,"name":"www.google.com","section":1,"ttl":123456,"type":1}
 --- no_error_log
 [error]
 
@@ -707,8 +707,8 @@ record: {"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -754,8 +754,8 @@ records: {"errcode":3,"errstr":"name error"}
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -801,8 +801,8 @@ records: {"errcode":4,"errstr":"not implemented"}
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -848,8 +848,8 @@ records: {"errcode":5,"errstr":"refused"}
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -895,8 +895,8 @@ records: {"errcode":6,"errstr":"unknown"}
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -941,8 +941,8 @@ connect() failed
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -989,8 +989,8 @@ failed to query: bad QR flag in the DNS response
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -1004,7 +1004,7 @@ failed to query: bad QR flag in the DNS response
 --- request
 GET /t
 --- response_body
-records: {}
+records: []
 --- no_error_log
 [error]
 --- no_check_leak
@@ -1036,8 +1036,8 @@ records: {}
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -1085,8 +1085,8 @@ id mismatch in the DNS reply: 126 ~= 125
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -1122,7 +1122,7 @@ GET /t
 --- udp_query eval
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
 --- response_body
-records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456}]
+records: [{"address":"127.0.0.1","class":1,"name":"www.google.com","section":1,"ttl":123456,"type":1}]
 --- error_log
 id mismatch in the DNS reply: 126 ~= 125
 id mismatch in the DNS reply: 120 ~= 125
@@ -1157,8 +1157,8 @@ id mismatch in the DNS reply: 127 ~= 125
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -1183,7 +1183,7 @@ id mismatch in the DNS reply: 127 ~= 125
 --- request
 GET /t
 --- response_body
-records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456},{"address":"0:0:0:0:0:0:0:1","section":1,"type":28,"class":1,"name":"l.www.google.com","ttl":0}]
+records: [{"address":"127.0.0.1","class":1,"name":"www.google.com","section":1,"ttl":123456,"type":1},{"address":"0:0:0:0:0:0:0:1","class":1,"name":"l.www.google.com","section":1,"ttl":0,"type":28}]
 --- no_error_log
 [error]
 --- error_log
@@ -1215,8 +1215,8 @@ query the TCP server due to reply truncation
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -1236,7 +1236,7 @@ query the TCP server due to reply truncation
 --- request
 GET /t
 --- response_body
-records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456},{"address":"0:0:0:0:0:0:0:1","section":1,"type":28,"class":1,"name":"l.www.google.com","ttl":0}]
+records: [{"address":"127.0.0.1","class":1,"name":"www.google.com","section":1,"ttl":123456,"type":1},{"address":"0:0:0:0:0:0:0:1","class":1,"name":"l.www.google.com","section":1,"ttl":0,"type":28}]
 --- no_error_log
 [error]
 --- error_log
@@ -1653,8 +1653,8 @@ records: [{"class":1,"name":"www.google.com","port":8080,"priority":1,"section":
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -1671,7 +1671,7 @@ GET /t
 --- udp_query eval
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
 --- response_body
-records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456}]
+records: [{"address":"127.0.0.1","class":1,"name":"www.google.com","section":1,"ttl":123456,"type":1}]
 --- no_error_log
 [error]
 
@@ -1700,8 +1700,8 @@ records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.goog
                 return
             end
 
-            local cjson = require "cjson"
-            ngx.say("records: ", cjson.encode(ans))
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
         ';
     }
 --- udp_listen: 1953
@@ -1718,6 +1718,6 @@ GET /t
 --- udp_query eval
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
 --- response_body
-records: [{"address":"127.0.0.1","section":1,"type":1,"class":1,"name":"www.google.com","ttl":123456}]
+records: [{"address":"127.0.0.1","class":1,"name":"www.google.com","section":1,"ttl":123456,"type":1}]
 --- no_error_log
 [error]
