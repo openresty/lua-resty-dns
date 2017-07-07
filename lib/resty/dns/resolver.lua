@@ -41,6 +41,7 @@ local IP6_ARPA = "ip6.arpa"
 local TYPE_A      = 1
 local TYPE_NS     = 2
 local TYPE_CNAME  = 5
+local TYPE_SOA    = 6
 local TYPE_PTR    = 12
 local TYPE_MX     = 15
 local TYPE_TXT    = 16
@@ -60,6 +61,7 @@ local _M = {
     TYPE_A      = TYPE_A,
     TYPE_NS     = TYPE_NS,
     TYPE_CNAME  = TYPE_CNAME,
+    TYPE_SOA    = TYPE_SOA,
     TYPE_PTR    = TYPE_PTR,
     TYPE_MX     = TYPE_MX,
     TYPE_TXT    = TYPE_TXT,
@@ -557,6 +559,27 @@ local function parse_section(answers, section, buf, start_pos, size,
 
             ans.ptrdname = name
 
+        elseif typ == TYPE_SOA then
+            local name, p = _decode_name(buf, pos)
+            if not name then
+                return nil, pos
+            end
+            ans.mname = name
+
+            pos = p
+            name, p = _decode_name(buf, pos)
+            if not name then
+                return nil, pos
+            end
+            ans.rname = name
+
+            local names = {"serial", "refresh", "retry", "expire", "mininum"}
+            for _, name in ipairs(names) do
+                local bytes = { byte(buf, p, p + 3) }
+                ans[name] = lshift(bytes[1], 24) + lshift(bytes[2], 16)
+                    + lshift(bytes[3], 8) + bytes[4]
+                p = p + 4
+            end
         else
             -- for unknown types, just forward the raw value
 
@@ -681,6 +704,9 @@ local function parse_response(buf, id, opts)
     if opts then
         authority_section = opts.authority_section
         additional_section = opts.additional_section
+        if opts.qtype == TYPE_SOA then
+            authority_section = true
+        end
     end
 
     local err
