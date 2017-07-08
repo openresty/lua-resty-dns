@@ -580,6 +580,7 @@ local function parse_section(answers, section, buf, start_pos, size,
                     + lshift(bytes[3], 8) + bytes[4]
                 p = p + 4
             end
+
         else
             -- for unknown types, just forward the raw value
 
