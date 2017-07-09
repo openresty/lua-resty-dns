@@ -399,17 +399,23 @@ SECTION_AN
 
 Identifier of the `Answer` section in the DNS response. Equal to decimal number `1`.
 
+[Back to TOC](#table-of-contents)
+
 SECTION_NS
 ----------
 `syntax: stype = r.SECTION_NS`
 
 Identifier of the `Authority` section in the DNS response. Equal to the decimal number `2`.
 
+[Back to TOC](#table-of-contents)
+
 SECTION_AR
 ----------
 `syntax: stype = r.SECTION_AR`
 
 Idnetifier of the `Additional` section in the DNS response. Equal to the decimal number `3`.
+
+[Back to TOC](#table-of-contents)
 
 Automatic Error Logging
 =======================
