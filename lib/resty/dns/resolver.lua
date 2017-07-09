@@ -83,6 +83,7 @@ local resolver_errstrs = {
     "refused",          -- 5
 }
 
+local soa_names = { "serial", "refresh", "retry", "expire", "mininum"}
 
 local mt = { __index = _M }
 
@@ -348,12 +349,10 @@ local function parse_section(answers, section, buf, start_pos, size,
 
         -- print("class: ", class)
 
-        local ttl_bytes = { byte(buf, pos + 4, pos + 7) }
+        local byte_1, byte_2, byte_3, byte_4 = byte(buf, pos + 4, pos + 7)
 
-        -- print("ttl bytes: ", concat(ttl_bytes, " "))
-
-        local ttl = lshift(ttl_bytes[1], 24) + lshift(ttl_bytes[2], 16)
-                    + lshift(ttl_bytes[3], 8) + ttl_bytes[4]
+        local ttl = lshift(byte_1, 24) + lshift(byte_2, 16)
+                    + lshift(byte_3, 8) + byte_4
 
         -- print("ttl: ", ttl)
 
@@ -573,11 +572,10 @@ local function parse_section(answers, section, buf, start_pos, size,
             end
             ans.rname = name
 
-            local names = {"serial", "refresh", "retry", "expire", "mininum"}
-            for _, name in ipairs(names) do
-                local bytes = { byte(buf, p, p + 3) }
-                ans[name] = lshift(bytes[1], 24) + lshift(bytes[2], 16)
-                    + lshift(bytes[3], 8) + bytes[4]
+            for _, name in ipairs(soa_names) do
+                local byte_1, byte_2, byte_3, byte_4 = byte(buf, p, p + 3)
+                ans[name] = lshift(byte_1, 24) + lshift(byte_2, 16)
+                    + lshift(byte_3, 8) + byte_4
                 p = p + 4
             end
 
