@@ -51,6 +51,7 @@ GET /t
 ^records: \[.*?"address":"(?:\d{1,3}\.){3}\d+".*?\]$
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
@@ -83,6 +84,7 @@ GET /t
 ^records: \[.*?"cname":"[-_a-z0-9.]+".*?\]$
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
@@ -114,6 +116,7 @@ GET /t
 ^records: \[.*?"address":"[a-fA-F0-9]*(?::[a-fA-F0-9]*)+".*?\]$
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
@@ -177,6 +180,7 @@ GET /t
 ^records: \[.*?"address":"(?:\d{1,3}\.){3}\d+".*?\]$
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
@@ -209,6 +213,7 @@ GET /t
 ^records: \[\{.*?"preference":\d+,.*?"exchange":"[^"]+".*?\}\]$
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
@@ -241,6 +246,7 @@ GET /t
 ^records: \[\{.*?"nsdname":"[^"]+".*?\}\]$
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
@@ -307,6 +313,7 @@ GET /t
 ^records: \[\{.*?"txt":"v=spf\d+\s[^"]+".*?\}\]$
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
@@ -339,6 +346,7 @@ GET /t
 ^records: \[\{.*?"ptrdname":"google-public-dns-b\.google\.com".*?\}\]$
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
@@ -371,6 +379,7 @@ GET /t
 ^records: \[.*?"address":"(?:\d{1,3}\.){3}\d+".*?\]$
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
@@ -435,6 +444,7 @@ GET /t
 ^records: \[(?:{"class":1,"name":"_xmpp-client._tcp.jabber.org","port":\d+,"priority":\d+,"section":1,"target":"[\w.]+\.jabber.org","ttl":\d+,"type":33,"weight":\d+},?)+\]$
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
@@ -467,6 +477,7 @@ GET /t
 ^records: \[\{.*?"spf":"v=spf\d+\s[^"]+".*?\}\]$
 --- no_error_log
 [error]
+--- no_check_leak
 
 
 
