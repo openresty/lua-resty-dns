@@ -23,6 +23,7 @@ Table of Contents
     * [TYPE_A](#type_a)
     * [TYPE_NS](#type_ns)
     * [TYPE_CNAME](#type_cname)
+    * [TYPE_SOA](#type_soa)
     * [TYPE_PTR](#type_ptr)
     * [TYPE_MX](#type_mx)
     * [TYPE_TXT](#type_txt)
@@ -333,6 +334,13 @@ TYPE_CNAME
 ----------
 
 The `CNAME` resource record type, equal to the decimal number `5`.
+
+[Back to TOC](#table-of-contents)
+
+TYPE_SOA
+----------
+
+The `SOA` resource record type, equal to the decimal number `6`.
 
 [Back to TOC](#table-of-contents)
 

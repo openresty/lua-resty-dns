@@ -546,3 +546,35 @@ a.7.1.4.c.0.0.2.0.0.8.0.8.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.0.1.ip6.arpa
 --- no_error_log
 [error]
 
+
+
+=== TEST 17: SOA records
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_SOA })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        ';
+    }
+--- request
+GET /t
+--- response_body_like chop
+^records: \[(?:{"class":1,"expire":\d+,"mininum":\d+,"mname":"ns\d+\.google\.com","name":"google\.com","refresh":\d+,"retry":\d+,"rname":"dns-admin\.google\.com","section":2,"serial":\d+,"ttl":\d+,"type":6},?)+\]$
+--- no_error_log
+[error]
+--- no_check_leak
