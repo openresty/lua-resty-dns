@@ -830,7 +830,7 @@ function _M.tcp_query(self, qname, opts)
 end
 
 
-function _M.query(self, qname, opts)
+function _M.query(self, qname, opts, tries)
     local socks = self.socks
     if not socks then
         return nil, "not initialized"
@@ -846,56 +846,61 @@ function _M.query(self, qname, opts)
     -- local cjson = require "cjson"
     -- print("query: ", cjson.encode(concat(query, "")))
 
+    local ok
     local retrans = self.retrans
+    if tries then
+      tries[1] = nil
+    end
 
     -- print("retrans: ", retrans)
 
     for i = 1, retrans do
         local sock = pick_sock(self, socks)
 
-        local ok, err = sock:send(query)
+        ok, err = sock:send(query)
         if not ok then
             local server = _get_cur_server(self)
-            return nil, "failed to send request to UDP server "
+            err = "failed to send request to UDP server "
                 .. concat(server, ":") .. ": " .. err
-        end
 
-        local buf, err
+        else
+            local buf
 
-        for j = 1, 128 do
-            buf, err = sock:receive(4096)
-
-            if err then
-                break
-            end
-
-            if buf then
-                local answers
-                answers, err = parse_response(buf, id, opts)
-                if not answers then
-                    if err == "truncated" then
-                        return _tcp_query(self, query, id, opts)
-                    end
-
-                    if err ~= "id mismatch" then
-                        return nil, err
-                    end
-
-                    -- retry receiving when err == "id mismatch"
-                else
-                    return answers
+            for _ = 1, 128 do
+                buf, err = sock:receive(4096)
+                if err then
+                    local server = _get_cur_server(self)
+                    err = "failed to receive reply from UDP server "
+                        .. concat(server, ":") .. ": " .. err
+                    break
                 end
+
+                if buf then
+                    local answers
+                    answers, err = parse_response(buf, id, opts)
+                    if err == "truncated" then
+                        answers, err = _tcp_query(self, query, id, opts)
+                    end
+
+                    if err and err ~= "id mismatch" then
+                        break
+                    end
+
+                    if answers then
+                        return answers, nil, tries
+                    end
+                end
+                -- only here in case of an "id mismatch"
             end
         end
 
-        if err ~= "timeout" or i == retrans then
-            local server = _get_cur_server(self)
-            return nil, "failed to receive reply from UDP server "
-                .. concat(server, ":") .. ": " .. err
+        if tries then
+          tries[i] = err
+          tries[i + 1] = nil -- ensure nil-termination for user supplied table
         end
     end
 
-    -- impossible to reach here
+    return nil, err, tries
 end
 
 
