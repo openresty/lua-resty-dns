@@ -314,7 +314,7 @@ local function parse_section(answers, section, buf, start_pos, size,
                              should_skip)
     local pos = start_pos
 
-    for i = 1, size do
+    for _ = 1, size do
         -- print(format("ans %d: qtype:%d qclass:%d", i, qtype, qclass))
         local ans = {}
 
@@ -573,9 +573,9 @@ local function parse_section(answers, section, buf, start_pos, size,
             end
             ans.rname = name
 
-            for _, name in ipairs(soa_int32_fields) do
+            for _, field in ipairs(soa_int32_fields) do
                 local byte_1, byte_2, byte_3, byte_4 = byte(buf, p, p + 3)
-                ans[name] = lshift(byte_1, 24) + lshift(byte_2, 16)
+                ans[field] = lshift(byte_1, 24) + lshift(byte_2, 16)
                             + lshift(byte_3, 8) + byte_4
                 p = p + 4
             end
@@ -787,9 +787,9 @@ local function _tcp_query(self, query, id, opts)
             .. concat(server, ":") .. ": " .. err
     end
 
-    local len_hi = byte(buf, 1)
-    local len_lo = byte(buf, 2)
-    local len = lshift(len_hi, 8) + len_lo
+    len_hi = byte(buf, 1)
+    len_lo = byte(buf, 2)
+    len = lshift(len_hi, 8) + len_lo
 
     -- print("tcp message len: ", len)
 
@@ -950,7 +950,7 @@ function _M.arpa_str(addr)
         for i = addrlen, 0, -1 do
             local s = byte(addr, i)
             if s == COLON_CHAR or not s then
-                for j = hidx, 4 do
+                for _ = hidx, 4 do
                     arpa_tmpl[idx] = ZERO_CHAR
                     idx = idx + 2
                 end
