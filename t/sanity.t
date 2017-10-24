@@ -578,3 +578,36 @@ GET /t
 --- no_error_log
 [error]
 --- no_check_leak
+
+
+
+=== TEST 18: RRTYPE larger than 255
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            local ans, err = r:query("comodo.com", { qtype = 257 })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        ';
+    }
+--- request
+GET /t
+--- response_body_like chop
+^records: \[(?:{"class":1,"name":"comodo\.com","rdata":"[^"]+","section":1,"ttl":\d+,"type":257},?)+\]$
+--- no_error_log
+[error]
+--- no_check_leak
