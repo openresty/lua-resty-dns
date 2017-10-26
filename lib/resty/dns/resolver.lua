@@ -294,7 +294,7 @@ local function _build_request(qname, id, no_recurse, opts)
     local nan = "\0\0"
     local nns = "\0\0"
     local nar = "\0\0"
-    local typ = "\0" .. char(qtype)
+    local typ = char(rshift(qtype, 8), band(qtype, 0xff))
     local class = "\0\1"    -- the Internet class
 
     if byte(qname, 1) == DOT_CHAR then
