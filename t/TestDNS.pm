@@ -9,6 +9,7 @@ use Test::Nginx::Socket::Lua -Base;
 
 use constant {
     TYPE_A => 1,
+    TYPE_SOA => 6,
     TYPE_TXT => 16,
     TYPE_CNAME => 5,
     TYPE_AAAA => 28,
@@ -310,6 +311,16 @@ sub encode_record ($) {
         $rddata //= pack("nnn", $ans->{priority}, $ans->{weight}, $ans->{port}) . encode_name($srv);
         $rdlength //= length $rddata;
         $type //= TYPE_SRV;
+        $class //= CLASS_INTERNET;
+    }
+
+    my $soa = $ans->{soa};
+    if (defined $soa) {
+        my $data = encode_name($soa) . encode_name($ans->{rname});
+        $data .= pack("NNNNN", $ans->{serial}, $ans->{refresh}, $ans->{retry}, $ans->{expire}, $ans->{minimum});
+        $rddata //= $data;
+        $rdlength //= length $rddata;
+        $type //= TYPE_SOA;
         $class //= CLASS_INTERNET;
     }
 
