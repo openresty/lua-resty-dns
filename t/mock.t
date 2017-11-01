@@ -14,7 +14,7 @@ use Cwd qw(cwd);
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks() + 16);
+plan tests => repeat_each() * (3 * blocks() + 17);
 
 my $pwd = cwd();
 
@@ -1719,5 +1719,71 @@ GET /t
 "\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
 --- response_body
 records: [{"address":"127.0.0.1","class":1,"name":"www.google.com","section":1,"ttl":123456,"type":1}]
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: reply with SOA followed by additional data
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("google.com", { qtype = r.TYPE_SOA, additional_section = true })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        }
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qname => "google.com",
+    aa => 1,
+    answer => [
+        {
+            name => "google.com",
+            soa => "ns3.google.com",
+            rname => "dns-admin.google.com",
+            serial => 175802026,
+            refresh => 900,
+            retry => 900,
+            expire => 1800,
+            minimum => 60,
+            ttl => 0
+        }
+    ],
+    additional => [
+        {
+            name => "ns3.google.com",
+            ipv4 => "127.0.0.1",
+            ttl => 0
+        }
+    ]
+}
+--- request
+GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{06}google\x{03}com\x{00}\x{00}\x{06}\x{00}\x{01}"
+--- response_body
+records: [{"class":1,"expire":1800,"minimum":60,"mname":"ns3.google.com","name":"google.com","refresh":900,"retry":900,"rname":"dns-admin.google.com","section":1,"serial":175802026,"ttl":0,"type":6},{"address":"127.0.0.1","class":1,"name":"ns3.google.com","section":3,"ttl":0,"type":1}]
 --- no_error_log
 [error]
