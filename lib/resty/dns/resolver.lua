@@ -48,6 +48,7 @@ local TYPE_MX     = 15
 local TYPE_TXT    = 16
 local TYPE_AAAA   = 28
 local TYPE_SRV    = 33
+local TYPE_NAPTR  = 35
 local TYPE_SPF    = 99
 
 local CLASS_IN    = 1
@@ -68,6 +69,7 @@ local _M = {
     TYPE_TXT    = TYPE_TXT,
     TYPE_AAAA   = TYPE_AAAA,
     TYPE_SRV    = TYPE_SRV,
+    TYPE_NAPTR  = TYPE_NAPTR,
     TYPE_SPF    = TYPE_SPF,
     CLASS_IN    = CLASS_IN,
     SECTION_AN  = SECTION_AN,
@@ -209,6 +211,21 @@ end
 
 local function _encode_name(s)
     return char(#s) .. s
+end
+
+
+local function _decode_string(buf, pos)
+    local slen = byte(buf, pos)
+
+    if slen == 0 then
+        return "", pos + 1
+    end
+
+    if pos + 1 + slen > #buf then
+        return nil, 'truncated'
+    end
+
+    return sub(buf, pos + 1, pos + slen), pos + slen + 1
 end
 
 
@@ -480,6 +497,50 @@ local function parse_section(answers, section, buf, start_pos, size,
             end
 
             ans.target = name
+
+            pos = p
+
+        elseif typ == TYPE_NAPTR then
+            if len < 7 then
+                return nil, "bad NAPTR record value length: " .. len
+            end
+
+            local order_hi = byte(buf, pos)
+            local order_lo = byte(buf, pos + 1)
+            ans.order = lshift(order_hi, 8) + order_lo
+
+            local preference_hi = byte(buf, pos + 2)
+            local preference_lo = byte(buf, pos + 3)
+            ans.preference = lshift(preference_hi, 8) + preference_lo
+
+            local flags_str, p = _decode_string(buf, pos + 4)
+            if not flags_str then
+                return nil, pos
+            end
+            ans.flags = flags_str
+
+            local services_str, p = _decode_string(buf, p)
+            if not services_str then
+                return nil, pos
+            end
+            ans.services = services_str
+
+            local regexp_str, p = _decode_string(buf, p)
+            if not regexp_str then
+                return nil, pos
+            end
+            ans.regexp = regexp_str
+
+            local replacements_str,p = _decode_name(buf, p)
+            if not replacements_str then
+                return nil, pos
+            end
+            ans.replacements = replacements_str
+
+            if p - pos ~= len then
+                return nil, format("bad NAPTR record length: %d ~= %d",
+                                   p - pos, len)
+            end
 
             pos = p
 

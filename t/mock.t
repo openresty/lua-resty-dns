@@ -1721,3 +1721,54 @@ GET /t
 records: [{"address":"127.0.0.1","class":1,"name":"www.google.com","section":1,"ttl":123456,"type":1}]
 --- no_error_log
 [error]
+
+
+=== TEST 35: NAPTR
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { {"127.0.0.1", 1953} }
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("5.4.3.2.1.e164.arpa", { qtype = r.TYPE_NAPTR })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("records: ", cjson.encode(ans))
+        ';
+    }
+--- udp_listen: 1953
+--- udp_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qtype => 35,  # NAPTR
+    qname => '5.4.3.2.1.e164.arpa',
+    answer => [
+        { name => "5.4.3.2.1.e164.arpa", ttl => 2, order => 10, preference => 100,
+          flags => "u",
+          services => "E2U+sip",
+          regexp => "!^\\+123456(.*)\$!sip:\\1\@example.org!",
+          replacements => ""
+        }
+    ],
+}
+--- request
+GET /t
+--- response_body
+records: [{"order":10,"preference":100,"class":1,"regexp":"!^\\+123456(.*)$!sip:\\1@example.org!","replacements":"","section":1,"flags":"u","type":35,"ttl":2,"name":"5.4.3.2.1.e164.arpa","services":"E2U+sip"}]
+--- no_error_log
+[error]

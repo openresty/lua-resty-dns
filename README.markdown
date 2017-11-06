@@ -29,6 +29,7 @@ Table of Contents
     * [TYPE_TXT](#type_txt)
     * [TYPE_AAAA](#type_aaaa)
     * [TYPE_SRV](#type_srv)
+    * [TYPE_NAPTR](#type_naptr)
     * [TYPE_SPF](#type_spf)
     * [CLASS_IN](#class_in)
     * [SECTION_AN](#section_an)
@@ -380,6 +381,16 @@ TYPE_SRV
 The `SRV` resource record type, equal to the decimal number `33`.
 
 See RFC 2782 for details.
+
+[Back to TOC](#table-of-contents)
+
+TYPE_NAPTR
+----------
+`syntax: typ = r.TYPE_NAPTR`
+
+The `NAPTR` resource record type, equal to the decimal number `35`.
+
+See RFC 2915 for details.
 
 [Back to TOC](#table-of-contents)
 
