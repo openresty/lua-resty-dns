@@ -84,7 +84,7 @@ local resolver_errstrs = {
     "refused",          -- 5
 }
 
-local soa_int32_fields = { "serial", "refresh", "retry", "expire", "mininum" }
+local soa_int32_fields = { "serial", "refresh", "retry", "expire", "minimum" }
 
 local mt = { __index = _M }
 
