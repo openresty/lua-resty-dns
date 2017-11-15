@@ -9,12 +9,13 @@ plan tests => repeat_each() * (3 * blocks());
 
 my $pwd = cwd();
 
-our $HttpConfig = qq{
+$ENV{TEST_NGINX_RESOLVER} ||= '8.8.8.8';
+
+our $HttpConfig = qq(
     lua_package_path "$pwd/t/lib/?.lua;$pwd/lib/?.lua;;";
     lua_package_cpath "/usr/local/openresty-debug/lualib/?.so;/usr/local/openresty/lualib/?.so;;";
-};
-
-$ENV{TEST_NGINX_RESOLVER} ||= '8.8.8.8';
+    resolver '$ENV{TEST_NGINX_RESOLVER}';
+);
 
 no_long_string();
 
@@ -608,6 +609,39 @@ GET /t
 GET /t
 --- response_body_like chop
 ^records: \[(?:{"class":1,"name":"comodo\.com","rdata":"[^"]+","section":1,"ttl":\d+,"type":257},?)+\]$
+--- no_error_log
+[error]
+--- no_check_leak
+
+
+
+=== TEST 19: SOA records
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{ nameservers = { "ns1.google.com" } }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            local ans, err = r:query("google.com", { qtype = r.TYPE_SOA })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        ';
+    }
+--- request
+GET /t
+--- response_body_like chop
+^records: \[.*?"name":"google.com".*?\]$
 --- no_error_log
 [error]
 --- no_check_leak
