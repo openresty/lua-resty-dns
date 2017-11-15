@@ -84,7 +84,7 @@ local resolver_errstrs = {
     "refused",          -- 5
 }
 
-local soa_int32_fields = { "serial", "refresh", "retry", "expire", "mininum" }
+local soa_int32_fields = { "serial", "refresh", "retry", "expire", "minimum" }
 
 local mt = { __index = _M }
 
@@ -579,6 +579,8 @@ local function parse_section(answers, section, buf, start_pos, size,
                             + lshift(byte_3, 8) + byte_4
                 p = p + 4
             end
+
+            pos = p
 
         else
             -- for unknown types, just forward the raw value
