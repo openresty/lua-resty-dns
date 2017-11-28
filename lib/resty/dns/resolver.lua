@@ -849,7 +849,7 @@ function _M.query(self, qname, opts, tries)
     local ok
     local retrans = self.retrans
     if tries then
-      tries[1] = nil
+        tries[1] = nil
     end
 
     -- print("retrans: ", retrans)
@@ -895,8 +895,8 @@ function _M.query(self, qname, opts, tries)
         end
 
         if tries then
-          tries[i] = err
-          tries[i + 1] = nil -- ensure nil-termination for user supplied table
+            tries[i] = err
+            tries[i + 1] = nil -- ensure termination for user supplied table
         end
     end
 

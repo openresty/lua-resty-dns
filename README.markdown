@@ -88,7 +88,7 @@ server {
             local answers, err, tries = r:query("www.google.com", nil, {})
             if not answers then
                 ngx.say("failed to query the DNS server: ", err)
-                ngx.say("retry historie: \n  "..table.concat(tries, "\n  "))
+                ngx.say("retry historie:\n  ", table.concat(tries, "\n  "))
                 return
             end
 
@@ -139,7 +139,7 @@ It accepts a `opts` table argument. The following options are supported:
 
 query
 -----
-`syntax: answers, err, tries = r:query(name, options?, tries?)`
+`syntax: answers, err, tries? = r:query(name, options?, tries?)`
 
 Performs a DNS standard query to the nameservers specified by the `new` method,
 and returns all the answer records in an array-like Lua table. In case of errors, it will

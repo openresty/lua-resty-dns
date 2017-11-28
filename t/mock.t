@@ -1799,7 +1799,7 @@ records: [{"class":1,"expire":1800,"minimum":60,"mname":"ns3.google.com","name":
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
-        content_by_lua '
+        content_by_lua_block {
             local resolver = require "resty.dns.resolver"
 
             local r, err = resolver:new{
@@ -1822,7 +1822,7 @@ records: [{"class":1,"expire":1800,"minimum":60,"mname":"ns3.google.com","name":
                 return
             end
             -- should not reach here
-        ';
+        }
     }
 --- request
 GET /t
@@ -1833,5 +1833,53 @@ failed to query: failed to receive reply from UDP server 127.0.0.1:20000: connec
 1: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
 2: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
 3: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+--- error_log
+Connection refused
+
+
+
+=== TEST 37: retry on connection failures, multiple servers
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = {       -- note: using bad ports
+                    {"127.0.0.1", 20000},
+                    {"127.0.0.1", 20001},
+                    {"127.0.0.1", 20002},
+                }, 
+                retrans = 3,
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err, lst = r:query("www.google.com", { qtype = r.TYPE_A }, {})
+            if not ans then
+                ngx.say("failed to query:")
+                table.sort(lst)
+                for i, err in ipairs(lst) do
+                    ngx.say(i, ": ", err)
+                end
+                return
+            end
+            -- should not reach here
+        }
+    }
+--- request
+GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
+--- response_body
+failed to query:
+1: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+2: failed to receive reply from UDP server 127.0.0.1:20001: connection refused
+3: failed to receive reply from UDP server 127.0.0.1:20002: connection refused
 --- error_log
 Connection refused
