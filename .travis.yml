@@ -27,8 +27,7 @@ env:
     - TEST_NGINX_SLEEP=0.006
     - LUA_DEV=libluajit-5.1-dev LUA_INCLUDE_DIR=/usr/include/luajit-2.0 LUALIB=-lluajit-5.1
   matrix:
-    - NGINX_VERSION=1.9.15
-    - NGINX_VERSION=1.11.2
+    - NGINX_VERSION=1.13.6
 
 install:
     - sudo cpanm --notest Test::Nginx > build.log 2>&1 || (cat build.log && exit 1)
