@@ -622,7 +622,8 @@ GET /t
         content_by_lua '
             local resolver = require "resty.dns.resolver"
 
-            local r, err = resolver:new{ nameservers = { "ns1.google.com" } }
+            local r, err =
+                resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
             if not r then
                 ngx.say("failed to instantiate resolver: ", err)
                 return
