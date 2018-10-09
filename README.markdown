@@ -145,7 +145,7 @@ Performs a DNS standard query to the nameservers specified by the `new` method,
 and returns all the answer records in an array-like Lua table. In case of errors, it will
 return `nil` and a string describing the error instead.
 
-If the server returns a non-zero error code, the fields `errcode` and `errstr` will be set accordingly in the Lua table returned.
+If the server returns a non-zero error code, the fields `errcode` and `errstr` will be set accordingly in the `answers` Lua table that is returned.
 
 Each entry in the `answers` returned table value is also a hash-like Lua table
 which usually takes some of the following fields:
@@ -235,6 +235,10 @@ Here is an example:
     local ans, err = r:tcp_query("www.google.com", { qtype = r.TYPE_A })
     if not ans then
         ngx.say("failed to query: ", err)
+        return
+    end
+    if ans.errcode then
+        ngx.say("server returned the error state: ", ans.errcode, ans.errstr)
         return
     end
 
