@@ -5,7 +5,7 @@ use Cwd qw(cwd);
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks());
+plan tests => repeat_each() * (3 * blocks()) - 2;
 
 my $pwd = cwd();
 
@@ -681,6 +681,53 @@ GET /t
 GET /t
 --- response_body_like chop
 ^records: \[.*?"name":"google.com".*?\]$
+--- no_error_log
+[error]
+--- no_check_leak
+
+
+
+=== TEST 21: override socket functions
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err =
+                resolver:new {
+                    nameservers = { "$TEST_NGINX_RESOLVER" },
+                    tcp = function(...)
+                      ngx.say("tcp called")
+                      return ngx.socket.tcp(...)
+                    end,
+                    udp = function(...)
+                      ngx.say("udp called")
+                      return ngx.socket.udp(...)
+                    end,
+                }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            local ans, err = r:query("google.com")
+            if not ans then
+                ngx.say("failed to query (udp): ", err)
+                return
+            end
+            local ans, err = r:tcp_query("google.com")
+            if not ans then
+                ngx.say("failed to query (tcp): ", err)
+                return
+            end
+        ';
+    }
+--- request
+GET /t
+--- response
+udp called
+tcp called
 --- no_error_log
 [error]
 --- no_check_leak
