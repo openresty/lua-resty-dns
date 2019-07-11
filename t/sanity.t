@@ -344,7 +344,7 @@ GET /t
 --- request
 GET /t
 --- response_body_like chop
-^records: \[\{.*?"ptrdname":"google-public-dns-b\.google\.com".*?\}\]$
+^records: \[\{.*?"ptrdname":"dns\.google".*?\}\]$
 --- no_error_log
 [error]
 --- no_check_leak
