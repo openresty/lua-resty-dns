@@ -450,6 +450,8 @@ GET /t
 
 
 === TEST 14: SPF query (with ans)
+SPF records are deprecated by RFC 7208 in favor of TXT records, and
+linkedin.com has migrated to such TXT records.
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -474,8 +476,8 @@ GET /t
     }
 --- request
 GET /t
---- response_body_like chop
-^records: \[\{.*?"spf":"v=spf\d+\s[^"]+".*?\}\]$
+--- response_body
+records: []
 --- no_error_log
 [error]
 --- no_check_leak
@@ -483,7 +485,6 @@ GET /t
 
 
 === TEST 15: SPF query (no ans)
---- SKIP
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -516,7 +517,44 @@ records: []
 
 
 
-=== TEST 16: generate arpa_str
+=== TEST 16: SPF query (as TXT with ans)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            local ans, err = r:query("linkedin.com", { qtype = r.TYPE_TXT })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            for i = 1, #ans do
+                if string.find(ans[i].txt, "v=spf", nil, true) then
+                    local ljson = require "ljson"
+                    ngx.say("ans: ", ljson.encode(ans[i]))
+                end
+            end
+        ';
+    }
+--- request
+GET /t
+--- response_body_like chop
+^ans: \{.*?"txt":"v=spf\d+\s[^"]+".*?\}$
+--- no_error_log
+[error]
+--- no_check_leak
+
+
+
+=== TEST 17: generate arpa_str
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -549,7 +587,7 @@ a.7.1.4.c.0.0.2.0.0.8.0.8.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.0.1.ip6.arpa
 
 
 
-=== TEST 17: SOA records
+=== TEST 18: SOA records
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -582,7 +620,7 @@ GET /t
 
 
 
-=== TEST 18: RRTYPE larger than 255
+=== TEST 19: RRTYPE larger than 255
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -615,7 +653,7 @@ GET /t
 
 
 
-=== TEST 19: SOA records
+=== TEST 20: SOA records
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
