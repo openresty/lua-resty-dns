@@ -29,7 +29,7 @@ env:
     - LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
   matrix:
     - NGINX_VERSION=1.9.15
-    - NGINX_VERSION=1.19.2
+    - NGINX_VERSION=1.19.3
 
 install:
     - sudo cpanm --notest Test::Nginx > build.log 2>&1 || (cat build.log && exit 1)
@@ -37,7 +37,7 @@ install:
     - git clone https://github.com/openresty/lua-nginx-module.git ../lua-nginx-module
     - git clone https://github.com/openresty/lua-resty-core.git ../lua-resty-core
     - git clone https://github.com/openresty/lua-resty-lrucache.git ../lua-resty-lrucache
-    - git clone -b 1.19.2.x https://github.com/xiaocang/no-pool-nginx.git ../no-pool-nginx
+    - git clone -b 1.19.3.x https://github.com/xiaocang/no-pool-nginx.git ../no-pool-nginx
     - git clone https://github.com/openresty/nginx-devel-utils.git
     - git clone -b v2.1-agentzh https://github.com/openresty/luajit2.git luajit2
 
