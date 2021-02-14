@@ -134,6 +134,12 @@ It accepts a `opts` table argument. The following options are supported:
 * `no_recurse`
 
 	a boolean flag controls whether to disable the "recursion desired" (RD) flag in the UDP request. Defaults to `false`.
+* `tcp`
+
+  an optional function to create a tcp socket. This allows using the library in contexts where the co-sockets are unavailable.  Defaults to `ngx.socket.tcp`.
+* `udp`
+  an optional function to create a udp socket. This allows using the library in contexts where the co-sockets are unavailable.  Defaults to `ngx.socket.udp`.
+
 
 [Back to TOC](#table-of-contents)
 
