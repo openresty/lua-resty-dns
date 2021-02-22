@@ -1863,7 +1863,118 @@ Connection refused
             local ans, err, lst = r:query("www.google.com", { qtype = r.TYPE_A }, {})
             if not ans then
                 ngx.say("failed to query:")
-                table.sort(lst)
+                table.sort(lst)  -- must sort because we have a random start
+                for i, err in ipairs(lst) do
+                    ngx.say(i, ": ", err)
+                end
+                return
+            end
+            -- should not reach here
+        }
+    }
+--- request
+GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
+--- response_body
+failed to query:
+1: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+2: failed to receive reply from UDP server 127.0.0.1:20001: connection refused
+3: failed to receive reply from UDP server 127.0.0.1:20002: connection refused
+--- error_log
+Connection refused
+
+
+
+=== TEST 38: no_random always starts at first server
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolver = require "resty.dns.resolver"
+
+            local ans, err, lst
+            local tries = {}
+            for i = 1, 10 do 
+                local r, err = resolver:new{
+                    nameservers = {       -- note: using bad ports
+                        {"127.0.0.1", 20000},
+                        {"127.0.0.1", 20001},
+                        {"127.0.0.1", 20002},
+                    },
+                    retrans = 1,
+                    no_random = true,
+                }
+                if not r then
+                    ngx.say("failed to instantiate resolver: ", err)
+                    return
+                end
+
+                --r._id = 125
+
+                local ans, err, lst = r:query("www.google.com", { qtype = r.TYPE_A }, {})
+                if ans then
+                    error("query wasn't supposed to succeed")
+                end
+                for _, try in ipairs(lst) do
+                    tries[#tries+1] = try
+                end
+            end
+            ngx.say("tries:")
+            --table.sort(lst)
+            for i, err in ipairs(tries) do
+                ngx.say(i, ": ", err)
+            end
+            return
+        }
+    }
+--- request
+GET /t
+--- udp_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
+--- response_body
+tries:
+1: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+2: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+3: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+4: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+5: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+6: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+7: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+8: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+9: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+10: failed to receive reply from UDP server 127.0.0.1:20000: connection refused
+--- error_log
+Connection refused
+
+
+
+=== TEST 39: no_random tries servers in defined order
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = {       -- note: using bad ports
+                    {"127.0.0.1", 20000},
+                    {"127.0.0.1", 20001},
+                    {"127.0.0.1", 20002},
+                },
+                retrans = 3,
+                no_random = true,
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err, lst = r:query("www.google.com", { qtype = r.TYPE_A }, {})
+            if not ans then
+                ngx.say("failed to query:")
                 for i, err in ipairs(lst) do
                     ngx.say(i, ": ", err)
                 end

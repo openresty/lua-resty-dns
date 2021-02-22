@@ -152,7 +152,8 @@ function _M.new(class, opts)
     tcp_sock:settimeout(timeout)
 
     return setmetatable(
-                { cur = rand(1, n), socks = socks,
+                { cur = opts.no_random and 1 or rand(1, n),
+                  socks = socks,
                   tcp_sock = tcp_sock,
                   servers = servers,
                   retrans = opts.retrans or 5,

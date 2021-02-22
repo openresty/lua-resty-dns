@@ -78,6 +78,7 @@ server {
                 nameservers = {"8.8.8.8", {"8.8.4.4", 53} },
                 retrans = 5,  -- 5 retransmissions on receive timeout
                 timeout = 2000,  -- 2 sec
+                no_random = true, -- always start with first nameserver
             }
 
             if not r then
@@ -134,6 +135,9 @@ It accepts a `opts` table argument. The following options are supported:
 * `no_recurse`
 
 	a boolean flag controls whether to disable the "recursion desired" (RD) flag in the UDP request. Defaults to `false`.
+* `no_random`
+
+	a boolean flag controls whether to randomly pick the nameserver to query first, if `true` will always start with the first nameserver listed. Defaults to `false`.
 
 [Back to TOC](#table-of-contents)
 
