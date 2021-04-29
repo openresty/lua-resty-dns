@@ -1895,7 +1895,7 @@ Connection refused
 
             local ans, err, lst
             local tries = {}
-            for i = 1, 10 do 
+            for i = 1, 10 do
                 local r, err = resolver:new{
                     nameservers = {       -- note: using bad ports
                         {"127.0.0.1", 20000},
