@@ -58,7 +58,7 @@ local SECTION_AR  = 3
 
 
 local _M = {
-    _VERSION    = '0.21',
+    _VERSION    = '0.22',
     TYPE_A      = TYPE_A,
     TYPE_NS     = TYPE_NS,
     TYPE_CNAME  = TYPE_CNAME,
