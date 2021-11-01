@@ -874,8 +874,8 @@ function _M.doh_query(self, qname, opts, tries)
             res = ngx.location.capture(servers[idx][1] .. b64.encode_base64url(qname))
         else
             id = _gen_id(self)
-            res = ngx.location.capture(servers[idx][1],
-                    { method = ngx.HTTP_POST, body = _build_request(qname, id, self.no_recurse, opts) })
+            local bdata = table.concat(_build_request(qname, id, self.no_recurse, opts))
+            res = ngx.location.capture(servers[idx][1],{ method = ngx.HTTP_POST, body = bdata })
         end
 
         if res.status == 200 and res.body then
