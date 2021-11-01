@@ -25,7 +25,7 @@ local unpack = unpack
 local setmetatable = setmetatable
 local type = type
 local ipairs = ipairs
-
+local b64 = require "ngx.base64"
 
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
@@ -110,6 +110,10 @@ function _M.new(class, opts)
         return nil, "no nameservers specified"
     end
 
+    if opts.doh ~= nil and (opts.doh ~= 'POST' and opts.doh ~= 'GET') then
+        return nil, "invalid DoH mode specified"
+    end
+
     local timeout = opts.timeout or 2000  -- default 2 sec
 
     local n = #servers
@@ -118,30 +122,32 @@ function _M.new(class, opts)
 
     for i = 1, n do
         local server = servers[i]
-        local sock, err = udp()
-        if not sock then
-            return nil, "failed to create udp socket: " .. err
-        end
-
         local host, port
+
         if type(server) == 'table' then
             host = server[1]
             port = server[2] or 53
-
         else
             host = server
             port = 53
             servers[i] = {host, port}
         end
 
-        local ok, err = sock:setpeername(host, port)
-        if not ok then
-            return nil, "failed to set peer name: " .. err
+        if not opts.doh then
+            local sock, err = udp()
+            if not sock then
+                return nil, "failed to create udp socket: " .. err
+            end
+
+            local ok, err = sock:setpeername(host, port)
+            if not ok then
+                return nil, "failed to set peer name: " .. err
+            end
+
+            sock:settimeout(timeout)
+
+            insert(socks, sock)
         end
-
-        sock:settimeout(timeout)
-
-        insert(socks, sock)
     end
 
     local tcp_sock, err = tcp()
@@ -158,6 +164,7 @@ function _M.new(class, opts)
                   servers = servers,
                   retrans = opts.retrans or 5,
                   no_recurse = opts.no_recurse,
+                  doh = opts.doh
                 }, mt)
 end
 
@@ -832,6 +839,69 @@ end
 
 
 function _M.query(self, qname, opts, tries)
+    if self.doh then
+        return _M.doh_query(self,qname,opts,tries)
+    end
+
+    return _M.udp_tcp_query(self,qname,opts,tries)
+end
+
+function _M.doh_query(self, qname, opts, tries)
+    local retrans = self.retrans
+    if tries then
+        tries[1] = nil
+    end
+
+    local servers = self.servers
+
+    if #servers == 0 then
+        return nil, "No servers available"
+    end
+
+    local err
+
+    for i = 1, retrans do
+        local idx = i
+
+        if idx > #servers then
+            idx = 1
+        end
+
+        local res
+        local id 
+        
+        if self.doh == 'GET' then
+            res = ngx.location.capture(servers[idx][1] .. b64.encode_base64url(qname))
+        else
+            id = _gen_id(self)
+            res = ngx.location.capture(servers[idx][1],
+                    { method = ngx.HTTP_POST, body = _build_request(qname, id, self.no_recurse, opts) })
+        end
+
+        if res.status == 200 and res.body then
+            local answers
+            if self.doh == 'GET' then
+                local ident_hi = byte(res.body, 1)
+                local ident_lo = byte(res.body, 2)
+                id = lshift(ident_hi, 8) + ident_lo 
+            end
+            answers, err = parse_response(res.body, id, opts)
+            if answers then
+                return answers, nil, tries
+            end
+        end
+
+        if tries then
+            tries[i] = err
+            tries[i + 1] = nil -- ensure termination for user supplied table
+        end
+    end
+
+    return nil, err, tries
+end
+
+
+function _M.udp_tcp_query(self, qname, opts, tries)
     local socks = self.socks
     if not socks then
         return nil, "not initialized"

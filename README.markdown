@@ -125,7 +125,7 @@ It accepts a `opts` table argument. The following options are supported:
 
 * `nameservers`
 
-	a list of nameservers to be used. Each nameserver entry can be either a single hostname string or a table holding both the hostname string and the port number. The nameserver is picked up by a simple round-robin algorithm for each `query` method call. This option is required.
+	a list of nameservers to be used. Each nameserver entry can be either a single hostname string, DoH url with optional port or a table holding both the hostname string and the port number. The nameserver is picked up by a simple round-robin algorithm for each `query` method call. This option is required.
 * `retrans`
 
 	the total number of times of retransmitting the DNS request when receiving a DNS response times out according to the `timeout` setting. Defaults to `5` times. When trying to retransmit the query, the next nameserver according to the round-robin algorithm will be picked up.
@@ -138,7 +138,10 @@ It accepts a `opts` table argument. The following options are supported:
 * `no_random`
 
 	a boolean flag controls whether to randomly pick the nameserver to query first, if `true` will always start with the first nameserver listed. Defaults to `false`.
+* `doh`
 
+    type of DoH query possible values are `POST`, `GET` or boolean false,  Defaults to nil.
+    
 [Back to TOC](#table-of-contents)
 
 query
