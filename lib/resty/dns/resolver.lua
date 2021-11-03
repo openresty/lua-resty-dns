@@ -840,13 +840,13 @@ end
 
 function _M.query(self, qname, opts, tries)
     if self.doh then
-        return _M.doh_query(self,qname,opts,tries)
+        return doh_query(self,qname,opts,tries)
     end
 
-    return _M.udp_tcp_query(self,qname,opts,tries)
+    return udp_tcp_query(self,qname,opts,tries)
 end
 
-function _M.doh_query(self, qname, opts, tries)
+local function doh_query(self, qname, opts, tries)
     local retrans = self.retrans
     if tries then
         tries[1] = nil
@@ -901,7 +901,7 @@ function _M.doh_query(self, qname, opts, tries)
 end
 
 
-function _M.udp_tcp_query(self, qname, opts, tries)
+local function udp_tcp_query(self, qname, opts, tries)
     local socks = self.socks
     if not socks then
         return nil, "not initialized"
