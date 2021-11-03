@@ -878,7 +878,7 @@ local function doh_query(self, qname, opts, tries)
             res = ngx.location.capture(servers[idx][1],{ method = ngx.HTTP_POST, body = bdata })
         end
 
-        if res.status == 200 and res.body then
+        if res ~= nil and res.status == 200 and res.body then
             local answers
             if self.doh == 'GET' then
                 local ident_hi = byte(res.body, 1)
