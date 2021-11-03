@@ -838,14 +838,6 @@ function _M.tcp_query(self, qname, opts)
 end
 
 
-function _M.query(self, qname, opts, tries)
-    if self.doh then
-        return doh_query(self,qname,opts,tries)
-    end
-
-    return udp_tcp_query(self,qname,opts,tries)
-end
-
 local function doh_query(self, qname, opts, tries)
     local retrans = self.retrans
     if tries then
@@ -974,6 +966,13 @@ local function udp_tcp_query(self, qname, opts, tries)
     return nil, err, tries
 end
 
+function _M.query(self, qname, opts, tries)
+    if self.doh then
+        return doh_query(self,qname,opts,tries)
+    end
+    
+    return udp_tcp_query(self,qname,opts,tries)
+end
 
 function _M.compress_ipv6_addr(addr)
     local addr = re_sub(addr, "^(0:)+|(:0)+$|:(0:)+", "::", "jo")
