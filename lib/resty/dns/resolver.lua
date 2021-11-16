@@ -18,6 +18,8 @@ local lshift = bit.lshift
 local insert = table.insert
 local concat = table.concat
 local re_sub = ngx.re.sub
+local re_match = ngx.re.match
+local re_find = ngx.re.find
 local tcp = ngx.socket.tcp
 local log = ngx.log
 local DEBUG = ngx.DEBUG
@@ -26,6 +28,11 @@ local setmetatable = setmetatable
 local type = type
 local ipairs = ipairs
 local b64 = require "ngx.base64"
+local agent = "ngx_lua/" .. ngx.config.ngx_lua_version
+local str_lower = string.lower
+local ngx_ERR = ngx.ERR
+local tbl_insert = table.insert
+local tolower = string.lower
 
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
@@ -97,75 +104,6 @@ end
 
 for i = 2, 64, 2 do
     arpa_tmpl[i] = DOT_CHAR
-end
-
-
-function _M.new(class, opts)
-    if not opts then
-        return nil, "no options table specified"
-    end
-
-    local servers = opts.nameservers
-    if not servers or #servers == 0 then
-        return nil, "no nameservers specified"
-    end
-
-    if opts.doh ~= nil and (opts.doh ~= 'POST' and opts.doh ~= 'GET') then
-        return nil, "invalid DoH mode specified"
-    end
-
-    local timeout = opts.timeout or 2000  -- default 2 sec
-
-    local n = #servers
-
-    local socks = {}
-
-    for i = 1, n do
-        local server = servers[i]
-        local host, port
-
-        if type(server) == 'table' then
-            host = server[1]
-            port = server[2] or 53
-        else
-            host = server
-            port = 53
-            servers[i] = {host, port}
-        end
-
-        if not opts.doh then
-            local sock, err = udp()
-            if not sock then
-                return nil, "failed to create udp socket: " .. err
-            end
-
-            local ok, err = sock:setpeername(host, port)
-            if not ok then
-                return nil, "failed to set peer name: " .. err
-            end
-
-            sock:settimeout(timeout)
-
-            insert(socks, sock)
-        end
-    end
-
-    local tcp_sock, err = tcp()
-    if not tcp_sock then
-        return nil, "failed to create tcp socket: " .. err
-    end
-
-    tcp_sock:settimeout(timeout)
-
-    return setmetatable(
-                { cur = opts.no_random and 1 or rand(1, n),
-                  socks = socks,
-                  tcp_sock = tcp_sock,
-                  servers = servers,
-                  retrans = opts.retrans or 5,
-                  no_recurse = opts.no_recurse,
-                  doh = opts.doh
-                }, mt)
 end
 
 
@@ -838,7 +776,186 @@ function _M.tcp_query(self, qname, opts)
 end
 
 
-local function doh_query(self, qname, opts, tries)
+local function _http_connect(self,host)
+    local sock = self.tcp_sock
+    if not sock then
+        return nil, "not initialized"
+    end
+
+    local ok, err = sock:connect(host[1], host[2])
+    if not ok then
+        return nil, "failed to connect to HTTP server "
+        .. host[1] .. ":" .. host[2] .. ": " .. err
+    end
+
+    if host[4] and sock:getreusedtimes() == 0 then
+        local session, err = sock:sslhandshake(nil,host[1])
+        if not session then
+            return nil, err
+        end
+    end
+
+    return sock
+end
+
+
+local function _http_status_receive(sock)
+    local line, err, partial = sock:receive("*l")
+    if not line then
+       return nil, nil, nil, "failed to read http header status line: "..err
+    end
+
+    local ret, err = re_match(line,"(HTTP/[0-3](\\.[0-1])?) ([1-5][0-9]{2}) ([A-Za-z ]+)")
+
+    if not ret then
+        return nil, nil, nil, "failed to parse http status with error: "..err
+    end
+
+    return ret[1], tonumber(ret[3]), ret[4]
+end
+
+
+local function _http_header_receive(sock)
+    local ret = {}
+
+    repeat
+        local line, err = sock:receive("*l")
+        if not line then
+            return nil, err
+        end
+
+        local m, err = re_match(line, "([^:\\s]+):\\s*(.*)", "jo")
+        if err then log(DEBUG, err) end
+
+        if not m then
+            break
+        end
+
+        local key = string.lower(m[1])
+        local val = m[2]
+
+        if ret[key] then
+            if type(ret[key]) ~= "table" then
+                ret[key] = { ret[key] }
+            end
+            tbl_insert(ret[key], tostring(val))
+        else
+            ret[key] = tostring(val)
+        end
+    until re_find(line, "^\\s*$", "jo")
+
+    return ret
+end
+
+
+local function _http_header_send(sock, host, method, length, param)
+    local hoststr
+
+    if (host[4] and host[2] ~= 443) or (not host[4] and host[2] ~= 80) then
+        hoststr = host[1]..":"..host[2]
+    else
+        hoststr = host[1]
+    end
+
+    local query = {
+        true,
+        'Host: '..hoststr,
+        'User-Agent: '..agent,
+        'Accept: application/dns-message',
+        'Connection: keep-alive'
+    }
+
+    if method == nil or method == ngx.HTTP_GET then
+        query[1] = 'GET '.. host[3]..param.. ' HTTP/1.1'
+        query = concat(query,"\r\n").."\r\n\r\n"
+    elseif method == ngx.HTTP_POST then
+        query[1] = 'POST '.. host[3] .. ' HTTP/1.1'
+        insert(query,'Content-Length: '..length)
+        insert(query,'Content-Type: application/dns-message')
+        query = concat(query, "\r\n").."\r\n\r\n"
+    else
+        return nil, "unsupported method"
+    end
+
+    local bytes, err = sock:send(query)
+
+    if not bytes then
+        return 0, err
+    end
+
+    return bytes
+end
+
+
+local function _http_body_receive(sock, header)
+    local len = header["content-length"]
+
+    if header["content-type"] ~= "application/dns-message" then
+        return nil, "http query failed invalid Content-Type: "..header["content-type"]
+    end
+
+    local data, err = sock:receiveany(tonumber(len))
+
+    if not data then
+        return nil, "http query failed to receive body "..err
+    end
+
+    return data
+end
+
+
+local function _http_query(self,host,opts)
+    local sock, err = _http_connect(self, host)
+
+    if not sock then
+        return nil, err
+    end
+
+    local bytes, err = _http_header_send(sock, host, opts.method, opts.body and #opts.body or 0, opts.param)
+
+    if not bytes then
+       return nil, err
+    end
+
+    if opts.body then
+        local bytes, err = sock:send(opts.body)
+        if not bytes or bytes < #opts.body then
+            return nil, "http POST query failed body not sent"
+        end
+    end
+
+    local version, status, reason, err = _http_status_receive(sock)
+
+    if err then
+        return nil, err
+    end
+
+    if status ~= 200 then
+        return nil, "http query failed status code is: "..status.." reason: "..reason
+    end
+
+    local header, err = _http_header_receive(sock)
+
+    if not header then
+        return nil, err
+    end
+
+    local data, err = _http_body_receive(sock, header)
+
+    if not data then
+        return nil, err
+    end
+
+    sock:setkeepalive()
+
+    return {
+        status  = status,
+        version = version,
+        body = data
+    }
+end
+
+local function _doh_query(self, qname, opts, tries)
     local retrans = self.retrans
     if tries then
         tries[1] = nil
@@ -847,7 +964,7 @@ local function doh_query(self, qname, opts, tries)
     local servers = self.servers
 
     if #servers == 0 then
-        return nil, "No servers available"
+        return nil, "no servers available"
     end
 
     local err
@@ -861,16 +978,20 @@ local function doh_query(self, qname, opts, tries)
 
         local res
         local id 
-        
+
         if self.doh == 'GET' then
-            res = ngx.location.capture(servers[idx][1] .. b64.encode_base64url(qname))
+            res = _http_query(self,servers[idx], { method = ngx.HTTP_GET, param = b64.encode_base64url(qname) })
         else
             id = _gen_id(self)
             local bdata = table.concat(_build_request(qname, id, self.no_recurse, opts))
-            res = ngx.location.capture(servers[idx][1],{ method = ngx.HTTP_POST, body = bdata })
+            res, err = _http_query(self,servers[idx],{ method = ngx.HTTP_POST, body = bdata }) 
         end
 
-        if res ~= nil and res.status == 200 and res.body then
+        if not res then
+           return nil, err, tries
+        end
+
+        if res.status == 200 and res.body then
             local answers
             if self.doh == 'GET' then
                 local ident_hi = byte(res.body, 1)
@@ -880,6 +1001,12 @@ local function doh_query(self, qname, opts, tries)
             answers, err = parse_response(res.body, id, opts)
             if answers then
                 return answers, nil, tries
+            end
+
+            if err and err ~= "id mismatch" then
+                break
+            else
+                log(DEBUG,"doh query failed to parse response",err)
             end
         end
 
@@ -893,7 +1020,7 @@ local function doh_query(self, qname, opts, tries)
 end
 
 
-local function udp_tcp_query(self, qname, opts, tries)
+local function _udp_tcp_query(self, qname, opts, tries)
     local socks = self.socks
     if not socks then
         return nil, "not initialized"
@@ -966,13 +1093,6 @@ local function udp_tcp_query(self, qname, opts, tries)
     return nil, err, tries
 end
 
-function _M.query(self, qname, opts, tries)
-    if self.doh then
-        return doh_query(self,qname,opts,tries)
-    end
-    
-    return udp_tcp_query(self,qname,opts,tries)
-end
 
 function _M.compress_ipv6_addr(addr)
     local addr = re_sub(addr, "^(0:)+|(:0)+$|:(0:)+", "::", "jo")
@@ -1045,6 +1165,126 @@ end
 function _M.reverse_query(self, addr)
     return self.query(self, self.arpa_str(addr),
                       {qtype = self.TYPE_PTR})
+end
+
+
+local function _new_doh(class,opts)
+    if opts.doh ~= 'POST' and opts.doh ~= 'GET' then
+        return nil, "invalid DoH mode specified"
+    end
+
+    local servers = opts.nameservers
+    local n = #servers
+
+    for i = 1, n do
+        local captures, err = re_match(servers[i],"^((https?)(://))?([A-Za-z0-9\\.-]+)(:[1-9][0-9]*)?(/.+)$")
+
+        if not captures then
+            return nil, err
+        end
+
+        local host = captures[4]
+        local ssl = (captures[1] == 'https://') and true or false
+        local port
+
+        if captures[5] then
+            port = tonumber(sub(captures[5],2))
+        elseif not ssl then
+            port = 80
+        else
+            port = 443
+        end
+
+        if not port then
+            return nil, "invalid port specified"
+        end
+
+        servers[i] = { host, port, captures[6], ssl}
+    end
+
+    _M.query = _doh_query
+
+    return servers
+end
+
+local function _new_tcp_udp(class,opts,timeout)
+    local servers = opts.nameservers
+    local n = #servers
+    local socks = {}
+
+    for i = 1, n do
+        local server = servers[i]
+        local host, port, ssl
+
+        if type(server) == 'table' then
+            host = server[1]
+            port = server[2] or 53
+        else
+            host = server
+            port = 53
+            servers[i] = {host, port}
+        end
+
+        local sock, err = udp()
+        if not sock then
+            return nil, "failed to create udp socket: " .. err
+        end
+
+        local ok, err = sock:setpeername(host, port)
+        if not ok then
+            return nil, "failed to set peer name: " .. err
+        end
+
+        sock:settimeout(timeout)
+
+        insert(socks, sock)
+    end
+
+    _M.query = _udp_tcp_query
+
+    return servers,socks
+end
+
+
+function _M.new(class, opts)
+    if not opts then
+        return nil, "no options table specified"
+    end
+
+    local servers = opts.nameservers
+    if not servers or #servers == 0 then
+        return nil, "no nameservers specified"
+    end
+
+    local timeout = opts.timeout or 2000 -- default 2 sec
+    local servers, socks, err
+
+    if opts.doh then
+        servers, err = _new_doh(class,opts)
+    else
+        servers, socks, err = _new_tcp_udp(class,opts,timeout)
+    end
+
+    if not servers then
+       return nil, err
+    end
+
+    local tcp_sock, err = tcp()
+    if not tcp_sock then
+        return nil, "failed to create tcp socket: " .. err
+    end
+
+    tcp_sock:settimeout(timeout)
+
+    return setmetatable(
+        { cur = opts.no_random and 1 or rand(1, n),
+          socks = socks,
+          tcp_sock = tcp_sock,
+          servers = servers,
+          retrans = opts.retrans or 5,
+          no_recurse = opts.no_recurse,
+          doh = opts.doh
+        }, mt)
 end
 
 
