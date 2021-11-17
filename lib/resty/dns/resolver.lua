@@ -979,7 +979,7 @@ local function _doh_query(self, qname, opts, tries)
         local res
         local id 
 
-        if self.doh_method == 'GET' then
+        if self.doh_method == ngx.HTTP_GET then
             res = _http_query(self,servers[idx], { method = ngx.HTTP_GET, param = b64.encode_base64url(qname) })
         else
             id = _gen_id(self)
@@ -993,7 +993,7 @@ local function _doh_query(self, qname, opts, tries)
 
         if res.status == 200 and res.body then
             local answers
-            if self.doh_method == 'GET' then
+            if self.doh_method == ngx.HTTP_GET then
                 local ident_hi = byte(res.body, 1)
                 local ident_lo = byte(res.body, 2)
                 id = lshift(ident_hi, 8) + ident_lo 
@@ -1169,8 +1169,13 @@ end
 
 
 local function _new_doh(class,opts)
-    if opts.doh_method ~= 'POST' and opts.doh_method ~= 'GET' then
-        return nil, "invalid DoH mode specified"
+    local method
+    if opts.doh_method == 'POST' then
+        method = ngx.HTTP_POST
+    elseif opts.doh_method == 'GET' then
+        method = ngx.HTTP_GET
+    else
+        return nil, nil, "invalid DoH mode specified"
     end
 
     local servers = opts.nameservers
@@ -1180,7 +1185,7 @@ local function _new_doh(class,opts)
         local captures, err = re_match(servers[i],"^((https?)(://))?([A-Za-z0-9\\.-]+)(:[1-9][0-9]*)?(/.+)$")
 
         if not captures then
-            return nil, err
+            return nil, nil, err
         end
 
         local host = captures[4]
@@ -1196,7 +1201,7 @@ local function _new_doh(class,opts)
         end
 
         if not port then
-            return nil, "invalid port specified"
+            return nil, nil, "invalid port specified"
         end
 
         servers[i] = { host, port, captures[6], ssl}
@@ -1204,7 +1209,7 @@ local function _new_doh(class,opts)
 
     _M.query = _doh_query
 
-    return servers
+    return servers, method
 end
 
 local function _new_tcp_udp(class,opts,timeout)
@@ -1258,9 +1263,10 @@ function _M.new(class, opts)
 
     local timeout = opts.timeout or 2000 -- default 2 sec
     local servers, socks, err
+    local method
 
     if opts.doh then
-        servers, err = _new_doh(class,opts)
+        servers, method, err = _new_doh(class,opts)
     else
         servers, socks, err = _new_tcp_udp(class,opts,timeout)
     end
@@ -1275,7 +1281,7 @@ function _M.new(class, opts)
     end
 
     tcp_sock:settimeout(timeout)
-
+    
     return setmetatable(
         { cur = opts.no_random and 1 or rand(1, n),
           socks = socks,
@@ -1284,7 +1290,7 @@ function _M.new(class, opts)
           retrans = opts.retrans or 5,
           no_recurse = opts.no_recurse,
           doh = opts.doh,
-          doh_method = opts.doh_method
+          doh_method = method
     }, mt)
 end
 
