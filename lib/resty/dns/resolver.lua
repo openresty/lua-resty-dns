@@ -979,7 +979,7 @@ local function _doh_query(self, qname, opts, tries)
         local res
         local id 
 
-        if self.doh == 'GET' then
+        if self.doh_method == 'GET' then
             res = _http_query(self,servers[idx], { method = ngx.HTTP_GET, param = b64.encode_base64url(qname) })
         else
             id = _gen_id(self)
@@ -993,7 +993,7 @@ local function _doh_query(self, qname, opts, tries)
 
         if res.status == 200 and res.body then
             local answers
-            if self.doh == 'GET' then
+            if self.doh_method == 'GET' then
                 local ident_hi = byte(res.body, 1)
                 local ident_lo = byte(res.body, 2)
                 id = lshift(ident_hi, 8) + ident_lo 
@@ -1169,7 +1169,7 @@ end
 
 
 local function _new_doh(class,opts)
-    if opts.doh ~= 'POST' and opts.doh ~= 'GET' then
+    if opts.doh_method ~= 'POST' and opts.doh_method ~= 'GET' then
         return nil, "invalid DoH mode specified"
     end
 
@@ -1283,8 +1283,9 @@ function _M.new(class, opts)
           servers = servers,
           retrans = opts.retrans or 5,
           no_recurse = opts.no_recurse,
-          doh = opts.doh
-        }, mt)
+          doh = opts.doh,
+          doh_method = opts.doh_method
+    }, mt)
 end
 
 
