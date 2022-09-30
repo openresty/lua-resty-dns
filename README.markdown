@@ -139,11 +139,15 @@ It accepts a `opts` table argument. The following options are supported:
 
 	a boolean flag controls whether to randomly pick the nameserver to query first, if `true` will always start with the first nameserver listed. Defaults to `false`.
 * `doh`
+
 	a boolean flag controls whether to use DNS over Https (DoH)
 
 * `doh_method`
 
     type of DoH query possible values are `POST` or `GET` or boolean false,  Defaults to nil.
+* `doh_bootstrap`
+
+    list of nameservers used to perform initial query for IP address of DoH servers.
     
 [Back to TOC](#table-of-contents)
 

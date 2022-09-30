@@ -1994,3 +1994,97 @@ failed to query:
 3: failed to receive reply from UDP server 127.0.0.1:20002: connection refused
 --- error_log
 Connection refused
+
+
+
+=== TEST 40: single answer DoH GET request, good A answer
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { "https://cloudflare-dns.com/dns-query?name=" },
+        	doh = true,
+        	doh_method = 'GET'
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        ';
+    }
+--- doh_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qname => 'www.google.com',
+    answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 }],
+}
+--- request
+GET /t
+--- doh_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
+--- response_body
+records: [{"address":"127.0.0.1","class":1,"name":"www.google.com","section":1,"ttl":123456,"type":1}]
+--- no_error_log
+[error]
+
+
+
+=== TEST 41: single answer DoH POST reply, good A answer
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err = resolver:new{
+                nameservers = { "https://cloudflare-dns.com/dns-query" },
+		doh = true,
+		doh_method = 'POST'
+            }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r._id = 125
+
+            local ans, err = r:query("www.google.com", { qtype = r.TYPE_A })
+            if not ans then
+                ngx.say("failed to query: ", err)
+                return
+            end
+
+            local ljson = require "ljson"
+            ngx.say("records: ", ljson.encode(ans))
+        ';
+    }
+--- doh_reply dns
+{
+    id => 125,
+    opcode => 0,
+    qname => 'www.google.com',
+    answer => [{ name => "www.google.com", ipv4 => "127.0.0.1", ttl => 123456 }],
+}
+--- request
+GET /t
+--- doh_query eval
+"\x{00}}\x{01}\x{00}\x{00}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{03}www\x{06}google\x{03}com\x{00}\x{00}\x{01}\x{00}\x{01}"
+--- response_body
+records: [{"address":"127.0.0.1","class":1,"name":"www.google.com","section":1,"ttl":123456,"type":1}]
+--- no_error_log
+[error]
