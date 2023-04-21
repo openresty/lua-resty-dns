@@ -99,6 +99,31 @@ for i = 2, 64, 2 do
     arpa_tmpl[i] = DOT_CHAR
 end
 
+local function udp_socks_cleanup(self)
+    if self.socks == nil then
+        return
+    end
+
+    for _, sock in ipairs(self.socks) do
+        sock:close()
+    end
+
+    self.socks = nil
+end
+
+local function tcp_socks_cleanup(self)
+    if self.tcp_sock == nil then
+        return
+    end
+
+    self.tcp_sock:close()
+    self.tcp_sock = nil
+end
+
+local actions = {
+    ["udp"] = udp_socks_cleanup,
+    ["tcp"] = tcp_socks_cleanup,
+}
 
 function _M.new(class, opts)
     if not opts then
@@ -978,5 +1003,17 @@ function _M.reverse_query(self, addr)
                       {qtype = self.TYPE_PTR})
 end
 
+function _M.socks_cleanup(self, sock_typs)
+    if type(sock_typs) ~= 'table' then
+        return nil, "sock_typs must be an array"
+    end
+
+    local opts = { sock_typs[1], sock_typs[2] }
+    for _, typ in ipairs(opts) do
+        if type(actions[typ]) == 'function' then
+            actions[typ](self)
+        end
+    end
+end
 
 return _M
