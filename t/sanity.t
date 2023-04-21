@@ -684,3 +684,33 @@ GET /t
 --- no_error_log
 [error]
 --- no_check_leak
+
+
+
+=== TEST 21: explicit cleanup
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local resolver = require "resty.dns.resolver"
+
+            local r, err =
+                resolver:new{ nameservers = { "$TEST_NGINX_RESOLVER" } }
+            if not r then
+                ngx.say("failed to instantiate resolver: ", err)
+                return
+            end
+
+            r:cleanup({ "udp", "tcp" })
+            local udp = r.socks or "nil"
+            local tcp = r.tcp_sock or "nil"
+            ngx.say("udp socket: " .. udp .. ", tcp socket: " .. tcp)
+        ';
+    }
+--- request
+GET /t
+--- response_body_like chop
+udp socket: nil, tcp socket: nil
+--- no_error_log
+[error]
+--- no_check_leak
