@@ -99,7 +99,7 @@ for i = 2, 64, 2 do
     arpa_tmpl[i] = DOT_CHAR
 end
 
-local function udp_socks_cleanup(self)
+local function udp_socks_close(self)
     if self.socks == nil then
         return
     end
@@ -111,7 +111,7 @@ local function udp_socks_cleanup(self)
     self.socks = nil
 end
 
-local function tcp_socks_cleanup(self)
+local function tcp_socks_close(self)
     if self.tcp_sock == nil then
         return
     end
@@ -121,8 +121,8 @@ local function tcp_socks_cleanup(self)
 end
 
 local actions = {
-    ["udp"] = udp_socks_cleanup,
-    ["tcp"] = tcp_socks_cleanup,
+    ["udp"] = udp_socks_close,
+    ["tcp"] = tcp_socks_close,
 }
 
 function _M.new(class, opts)
@@ -186,6 +186,16 @@ function _M.new(class, opts)
                 }, mt)
 end
 
+function _M:destroy()
+    udp_socks_close(self)
+    self.socks = nil
+    tcp_socks_close(self)
+    self.tcp_sock = nil
+    self.cur = nil
+    self.servers = nil
+    self.retrans = nil
+    self.no_recurse = nil
+end
 
 local function pick_sock(self, socks)
     local cur = self.cur
@@ -1012,6 +1022,12 @@ function _M.socks_cleanup(self, sock_typs)
     for _, typ in ipairs(opts) do
         if type(actions[typ]) == 'function' then
             actions[typ](self)
+            if typ == 'udp' then
+                self.socks = nil
+
+            else
+                self.tcp_sock = nil
+            end
         end
     end
 end
