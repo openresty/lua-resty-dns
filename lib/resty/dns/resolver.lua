@@ -183,9 +183,7 @@ end
 
 function _M:destroy()
     udp_socks_close(self)
-    self.socks = nil
     tcp_socks_close(self)
-    self.tcp_sock = nil
     self.cur = nil
     self.servers = nil
     self.retrans = nil
