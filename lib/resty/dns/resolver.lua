@@ -120,11 +120,6 @@ local function tcp_socks_close(self)
     self.tcp_sock = nil
 end
 
-local actions = {
-    ["udp"] = udp_socks_close,
-    ["tcp"] = tcp_socks_close,
-}
-
 function _M.new(class, opts)
     if not opts then
         return nil, "no options table specified"
@@ -1011,25 +1006,6 @@ end
 function _M.reverse_query(self, addr)
     return self.query(self, self.arpa_str(addr),
                       {qtype = self.TYPE_PTR})
-end
-
-function _M.socks_cleanup(self, sock_typs)
-    if type(sock_typs) ~= 'table' then
-        return nil, "sock_typs must be an array"
-    end
-
-    local opts = { sock_typs[1], sock_typs[2] }
-    for _, typ in ipairs(opts) do
-        if type(actions[typ]) == 'function' then
-            actions[typ](self)
-            if typ == 'udp' then
-                self.socks = nil
-
-            else
-                self.tcp_sock = nil
-            end
-        end
-    end
 end
 
 return _M
