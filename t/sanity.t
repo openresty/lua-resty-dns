@@ -687,11 +687,11 @@ GET /t
 
 
 
-=== TEST 21: explicit cleanup
+=== TEST 21: destroy
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
-        content_by_lua '
+        content_by_lua_block {
             local resolver = require "resty.dns.resolver"
 
             local r, err =
@@ -701,11 +701,11 @@ GET /t
                 return
             end
 
-            r:cleanup({ "udp", "tcp" })
+            r:destroy()
             local udp = r.socks or "nil"
             local tcp = r.tcp_sock or "nil"
             ngx.say("udp socket: " .. udp .. ", tcp socket: " .. tcp)
-        ';
+        }
     }
 --- request
 GET /t
