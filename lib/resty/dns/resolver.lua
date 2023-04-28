@@ -99,6 +99,7 @@ for i = 2, 64, 2 do
     arpa_tmpl[i] = DOT_CHAR
 end
 
+
 local function udp_socks_close(self)
     if self.socks == nil then
         return
@@ -111,6 +112,7 @@ local function udp_socks_close(self)
     self.socks = nil
 end
 
+
 local function tcp_socks_close(self)
     if self.tcp_sock == nil then
         return
@@ -119,6 +121,7 @@ local function tcp_socks_close(self)
     self.tcp_sock:close()
     self.tcp_sock = nil
 end
+
 
 function _M.new(class, opts)
     if not opts then
@@ -181,6 +184,7 @@ function _M.new(class, opts)
                 }, mt)
 end
 
+
 function _M:destroy()
     udp_socks_close(self)
     tcp_socks_close(self)
@@ -189,6 +193,7 @@ function _M:destroy()
     self.retrans = nil
     self.no_recurse = nil
 end
+
 
 local function pick_sock(self, socks)
     local cur = self.cur
