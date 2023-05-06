@@ -442,7 +442,7 @@ failed to query: bad name
 --- request
 GET /t
 --- response_body_like chop
-^records: \[(?:{"class":1,"name":"_xmpp-client._tcp.jabber.org","port":\d+,"priority":\d+,"section":1,"target":"[\w.]+\.jabber.org","ttl":\d+,"type":33,"weight":\d+},?)+\]$
+^records: \[(?:{"class":1,"name":"_xmpp-client._tcp.jabber.org","port":\d+,"priority":\d+,"section":1,"target":"[\w-]+.jabber.org","ttl":\d+,"type":33,"weight":\d+},?)+\]$
 --- no_error_log
 [error]
 --- no_check_leak
