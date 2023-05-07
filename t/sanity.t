@@ -621,6 +621,8 @@ GET /t
 
 
 === TEST 19: RRTYPE larger than 255
+This test case skipped due to changes of the DNS response.
+--- skip
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -650,7 +652,6 @@ GET /t
 --- no_error_log
 [error]
 --- no_check_leak
---- skip This test case skipped due to changes of the DNS response.
 
 
 
