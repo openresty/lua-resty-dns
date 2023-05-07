@@ -646,10 +646,11 @@ GET /t
 --- request
 GET /t
 --- response_body_like chop
-^records: \[(?:{"class":1,"name":"comodo\.com","rdata":"[^"]+","section":1,"ttl":\d+,"type":257},?)*\]$
+^records: \[(?:{"class":1,"name":"comodo\.com","rdata":"[^"]+","section":1,"ttl":\d+,"type":257},?)+\]$
 --- no_error_log
 [error]
 --- no_check_leak
+--- skip This test case skipped due to changes of the DNS response.
 
 
 
