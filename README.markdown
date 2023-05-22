@@ -12,6 +12,7 @@ Table of Contents
 * [Synopsis](#synopsis)
 * [Methods](#methods)
     * [new](#new)
+    * [destroy](#destroy)
     * [query](#query)
     * [tcp_query](#tcp_query)
     * [set_timeout](#set_timeout)
@@ -138,6 +139,14 @@ It accepts a `opts` table argument. The following options are supported:
 * `no_random`
 
 	a boolean flag controls whether to randomly pick the nameserver to query first, if `true` will always start with the first nameserver listed. Defaults to `false`.
+
+[Back to TOC](#table-of-contents)
+
+destroy
+-------
+`syntax: r:destroy()`
+
+Destroy the dns.resolver object by releasing all the internal occupied resources.
 
 [Back to TOC](#table-of-contents)
 
