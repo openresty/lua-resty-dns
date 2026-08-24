@@ -32,7 +32,7 @@ env:
     - LUAJIT_INC=$LUAJIT_PREFIX/include/luajit-2.1
     - LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
   matrix:
-    - NGINX_VERSION=1.31.3
+    - NGINX_VERSION=1.31.4
 
 install:
     - cpanm --sudo --notest Test::Nginx IPC::Run Test2::Util > build.log 2>&1 || (cat build.log && exit 1)
